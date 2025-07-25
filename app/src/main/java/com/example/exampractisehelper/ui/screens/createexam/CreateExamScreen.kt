@@ -1,10 +1,9 @@
-package com.example.exampractisehelper.ui.screens.home
+package com.example.exampractisehelper.ui.screens.createexam
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.example.exampractisehelper.data.entities.Exam
 import com.example.exampractisehelper.data.entities.ExamType

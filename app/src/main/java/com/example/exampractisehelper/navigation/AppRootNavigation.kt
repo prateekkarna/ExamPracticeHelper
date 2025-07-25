@@ -1,6 +1,6 @@
 package com.example.exampractisehelper.navigation
 
-import android.content.Context
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -11,10 +11,12 @@ import androidx.room.Room
 import com.example.exampractisehelper.data.database.PracticeDatabase
 import com.example.exampractisehelper.data.repository.ExamRepository
 import com.example.exampractisehelper.ui.components.AppScaffold
-import com.example.exampractisehelper.ui.screens.home.CreateExamScreen
-import com.example.exampractisehelper.ui.screens.home.CreateExamViewModelFactory
+import com.example.exampractisehelper.ui.screens.createexam.CreateExamScreen
+import com.example.exampractisehelper.ui.screens.createexam.CreateExamViewModelFactory
 import com.example.exampractisehelper.ui.screens.home.HomeScreen
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.exampractisehelper.ui.screens.createSession.CreateSessionScreen
+import com.example.exampractisehelper.ui.screens.createexam.CreateExamViewModel
 
 @Composable
 fun AppRootNavigation() {
@@ -26,8 +28,9 @@ fun AppRootNavigation() {
         NavHost(navController, startDestination = "home") {
             composable("home") {
                 HomeScreen(navController, onCreateExamClick = {
-                    navController.navigate("create_exam")
+                    navController.navigate("create_session")
                 })
+                //Text("Home Screen")
             }
             composable("create_exam") {
                 val context = androidx.compose.ui.platform.LocalContext.current
@@ -38,7 +41,7 @@ fun AppRootNavigation() {
                 ).build()
                 val repository = ExamRepository(db.examDao(), db.examTypeDao())
                 val factory = CreateExamViewModelFactory(repository)
-                val viewModel: com.example.exampractisehelper.ui.screens.home.CreateExamViewModel = viewModel(factory = factory)
+                val viewModel: CreateExamViewModel = viewModel(factory = factory)
                 CreateExamScreen(viewModel = viewModel, navController = navController)
             }
             composable(
@@ -80,9 +83,12 @@ fun AppRootNavigation() {
                     "practice_db"
                 ).build()
                 val repository = com.example.exampractisehelper.data.repository.ExamRepository(db.examDao(), db.examTypeDao())
-                val factory = com.example.exampractisehelper.ui.screens.home.CreateExamViewModelFactory(repository)
-                val viewModel: com.example.exampractisehelper.ui.screens.home.CreateExamViewModel = androidx.lifecycle.viewmodel.compose.viewModel(factory = factory)
-                com.example.exampractisehelper.ui.screens.home.CreateExamScreen(viewModel = viewModel, navController = navController, backStackEntry = backStackEntry)
+                val factory = CreateExamViewModelFactory(repository)
+                val viewModel: CreateExamViewModel = androidx.lifecycle.viewmodel.compose.viewModel(factory = factory)
+                CreateExamScreen(viewModel = viewModel, navController = navController, backStackEntry = backStackEntry)
+            }
+            composable("create_session") {
+                CreateSessionScreen()
             }
         }
     }

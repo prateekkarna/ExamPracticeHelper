@@ -54,21 +54,21 @@ fun HomeScreen(
             FloatingActionButton(onClick = onCreateExamClick) {
                 Icon(
                     imageVector = Icons.Default.Add,
-                    contentDescription = "Create Exam"
+                    contentDescription = "Create Session"
                 )
             }
         }
     ) { padding ->
         Column(
             modifier = Modifier
-                .padding(padding)
+                //.padding(padding)
                 .fillMaxSize()
                 .padding(horizontal = 16.dp)
         ) {
             OutlinedTextField(
                 value = searchQuery,
                 onValueChange = { searchQuery = it },
-                label = { Text("Search Exams") },
+                label = { Text("Search Sessions") },
                 leadingIcon = {
                     Icon(Icons.Default.Search, contentDescription = null)
                 },
@@ -92,6 +92,7 @@ fun HomeScreen(
                     )
                 }
             }
+            //Text("Hello")
         }
     }
 }
