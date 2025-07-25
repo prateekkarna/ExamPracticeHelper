@@ -1,11 +1,19 @@
 package com.example.exampractisehelper.ui.screens.createSession.components
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.example.exampractisehelper.ui.screens.createSession.Subtask
 
 import com.example.exampractisehelper.ui.screens.createSession.components.AddSubtaskComponent
 
@@ -33,7 +41,14 @@ fun AddTaskComponent(
     subtaskSeconds: String = "",
     onSubtaskSecondsChange: ((String) -> Unit)? = null,
     isAddSubtaskEnabled: Boolean = false,
+    subtasksForCurrentTask: List<Subtask> = emptyList(),
+    onRemoveSubtask: ((Int) -> Unit)? = null,
+    onEditSubtask: ((Int, String, String, String, String) -> Unit)? = null,
+    buttonText: String? = "Add Task", // New parameter for button text
+    onCancel: (() -> Unit)? = null // New parameter for cancel action
 ) {
+    var isEditingSubtask by remember { mutableStateOf(false) }
+
     Column {
         Row(
             Modifier.fillMaxWidth(),
@@ -93,17 +108,10 @@ fun AddTaskComponent(
                     modifier = Modifier.weight(1f),
                     placeholder = null
                 )
-                Spacer(Modifier.width(8.dp))
-                Button(
-                    onClick = onAddTask,
-                    enabled = isAddEnabled
-                ) {
-                    Text("Add Task")
-                }
             }
         } else if (askSubtask == true && onAddSubtask != null && onSubtaskNameChange != null && onSubtaskHoursChange != null && onSubtaskMinutesChange != null && onSubtaskSecondsChange != null) {
             Spacer(Modifier.height(8.dp))
-            Text("Add Subtask", style = MaterialTheme.typography.titleSmall)
+            Text(if (isEditingSubtask) "Edit Subtask" else "Add Subtask", style = MaterialTheme.typography.titleSmall)
             AddSubtaskComponent(
                 subtaskName = subtaskName,
                 subtaskHours = subtaskHours,
@@ -113,15 +121,53 @@ fun AddTaskComponent(
                 onSubtaskHoursChange = onSubtaskHoursChange,
                 onSubtaskMinutesChange = onSubtaskMinutesChange,
                 onSubtaskSecondsChange = onSubtaskSecondsChange,
-                onAddSubtask = onAddSubtask,
-                isAddEnabled = isAddSubtaskEnabled
+                onAddSubtask = {
+                    onAddSubtask?.invoke()
+                    if (isEditingSubtask) isEditingSubtask = false // Only reset after update
+                },
+                isAddEnabled = isAddSubtaskEnabled,
+                buttonText = if (isEditingSubtask) "Update Subtask" else "Add Subtask"
             )
             Spacer(Modifier.height(8.dp))
+            // Show list of already added subtasks
+            if (subtasksForCurrentTask.isNotEmpty()) {
+                Text("Added Subtasks:", style = MaterialTheme.typography.titleSmall)
+                Column(Modifier.padding(start = 8.dp)) {
+                    subtasksForCurrentTask.forEachIndexed { idx: Int, subtask: Subtask ->
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text("${idx + 1}. ${subtask.name} (${subtask.hours}h ${subtask.minutes}m ${subtask.seconds}s)", Modifier.weight(1f))
+                            IconButton(onClick = {
+                                // Prefill the subtask fields for editing
+                                onSubtaskNameChange?.invoke(subtask.name)
+                                onSubtaskHoursChange?.invoke(subtask.hours)
+                                onSubtaskMinutesChange?.invoke(subtask.minutes)
+                                onSubtaskSecondsChange?.invoke(subtask.seconds)
+                                isEditingSubtask = true
+                                // Remove the subtask from the list so it can be re-added after editing
+                                onRemoveSubtask?.invoke(idx)
+                            }) {
+                                Icon(Icons.Default.Edit, contentDescription = "Edit Subtask")
+                            }
+                            IconButton(onClick = { onRemoveSubtask?.invoke(idx) }) {
+                                Icon(Icons.Default.Delete, contentDescription = "Remove Subtask")
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        // Add Task/Update Task and Cancel buttons at the bottom
+        Spacer(Modifier.height(16.dp))
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
             Button(
                 onClick = onAddTask,
                 enabled = isAddEnabled
             ) {
-                Text("Add Task")
+                Text(buttonText ?: "Add Task")
+            }
+            Spacer(Modifier.width(8.dp))
+            TextButton(onClick = { onCancel?.invoke() }) {
+                Text("Cancel")
             }
         }
     }

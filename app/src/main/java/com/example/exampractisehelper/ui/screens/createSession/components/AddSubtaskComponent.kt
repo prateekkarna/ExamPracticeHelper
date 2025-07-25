@@ -18,7 +18,8 @@ fun AddSubtaskComponent(
     onSubtaskMinutesChange: (String) -> Unit,
     onSubtaskSecondsChange: (String) -> Unit,
     onAddSubtask: () -> Unit,
-    isAddEnabled: Boolean
+    isAddEnabled: Boolean,
+    buttonText: String = "Add Subtask"
 ) {
     Column {
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
@@ -31,11 +32,12 @@ fun AddSubtaskComponent(
             )
         }
         Spacer(Modifier.height(8.dp))
+        // Subtask timer row
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             OutlinedTextField(
                 value = subtaskHours,
                 onValueChange = onSubtaskHoursChange,
-                label = null,
+                label = { Text("HH") },
                 singleLine = true,
                 modifier = Modifier.weight(1f)
             )
@@ -43,7 +45,7 @@ fun AddSubtaskComponent(
             OutlinedTextField(
                 value = subtaskMinutes,
                 onValueChange = onSubtaskMinutesChange,
-                label = null,
+                label = { Text("MM") },
                 singleLine = true,
                 modifier = Modifier.weight(1f)
             )
@@ -51,16 +53,19 @@ fun AddSubtaskComponent(
             OutlinedTextField(
                 value = subtaskSeconds,
                 onValueChange = onSubtaskSecondsChange,
-                label = null,
+                label = { Text("SS") },
                 singleLine = true,
                 modifier = Modifier.weight(1f)
             )
-            Spacer(Modifier.width(8.dp))
+        }
+        Spacer(Modifier.height(8.dp))
+        // Add Subtask button row
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             Button(
                 onClick = onAddSubtask,
                 enabled = isAddEnabled
             ) {
-                Text("Add Subtask")
+                Text(buttonText)
             }
         }
     }
