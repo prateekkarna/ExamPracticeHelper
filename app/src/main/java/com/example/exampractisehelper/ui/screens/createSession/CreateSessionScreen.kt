@@ -60,11 +60,13 @@ fun CreateSessionScreen(
             }
         } else if (timerTriple != null) {
             val (h, m, s) = timerTriple
-            (h.ifBlank { "0" }.toIntOrNull() ?: 0) * 3600 + (m.ifBlank { "0" }.toIntOrNull() ?: 0) * 60 + (s.ifBlank { "0" }.toIntOrNull() ?: 0)
-        } else null
+            (h.ifBlank { "0" }.toIntOrNull() ?: 0) * 3600 +
+            (m.ifBlank { "0" }.toIntOrNull() ?: 0) * 60 +
+            (s.ifBlank { "0" }.toIntOrNull() ?: 0)
+        } else 0
         val task = com.example.exampractisehelper.data.entities.Task(
             taskId = 0,
-            sessionId = 0,
+            sessionId = 0, // Will be set in repository
             text = taskName,
             hasSubtasks = hasSubtasks,
             taskDuration = taskDuration,
@@ -73,7 +75,7 @@ fun CreateSessionScreen(
         val subtaskEntities = subtasks.map {
             com.example.exampractisehelper.data.entities.Subtask(
                 subtaskId = 0,
-                taskId = 0,
+                taskId = 0, // Will be set in repository
                 name = it.name,
                 duration = ((it.hours.ifBlank { "0" }.toIntOrNull() ?: 0) * 3600 + (it.minutes.ifBlank { "0" }.toIntOrNull() ?: 0) * 60 + (it.seconds.ifBlank { "0" }.toIntOrNull() ?: 0))
             )
@@ -574,40 +576,27 @@ fun CreateSessionScreen(
                         // Save session logic
                         // Compose PracticeSession, Task, Subtask objects from UI state
                         // For demonstration, only sessionName is used
-                        val totalDuration = if (
-                            sessionHours.isNotBlank() || sessionMinutes.isNotBlank() || sessionSeconds.isNotBlank()
-                        ) {
-                            (sessionHours.ifBlank { "0" }.toIntOrNull() ?: 0) * 3600 +
-                            (sessionMinutes.ifBlank { "0" }.toIntOrNull() ?: 0) * 60 +
-                            (sessionSeconds.ifBlank { "0" }.toIntOrNull() ?: 0)
-                        } else null
                         val session = com.example.exampractisehelper.data.entities.PracticeSession(
                             sessionId = 0,
                             name = sessionName,
-                            isTimed = totalDuration != null,
-                            totalDuration = totalDuration
+                            isTimed = false,
+                            totalDuration = null
                         )
-                        val tasksWithSubtasks = tasks.map { (taskName, subtasks) ->
+                        val tasksWithSubtasks = tasks.map { (taskName, subtasks, timerTriple) ->
                             val hasSubtasks = subtasks.isNotEmpty()
-                            val taskDuration = if (!hasSubtasks) {
-                                // Find the original task in tasks list for editing
-                                val originalTask = tasks.find { it.first == taskName }
-                                if (originalTask != null && originalTask.second.isEmpty()) {
-                                    // Try to get timer from backup if editing
-                                    val backup = editingTaskBackup
-                                    if (backup != null && backup.first == taskName && backup.second.isEmpty()) {
-                                        val h = currentTaskHours.ifBlank { "0" }.toIntOrNull() ?: 0
-                                        val m = currentTaskMinutes.ifBlank { "0" }.toIntOrNull() ?: 0
-                                        val s = currentTaskSeconds.ifBlank { "0" }.toIntOrNull() ?: 0
-                                        h * 3600 + m * 60 + s
-                                    } else {
-                                        val h = currentTaskHours.ifBlank { "0" }.toIntOrNull() ?: 0
-                                        val m = currentTaskMinutes.ifBlank { "0" }.toIntOrNull() ?: 0
-                                        val s = currentTaskSeconds.ifBlank { "0" }.toIntOrNull() ?: 0
-                                        h * 3600 + m * 60 + s
-                                    }
-                                } else null
-                            } else null
+                            val taskDuration = if (hasSubtasks) {
+                                subtasks.sumOf {
+                                    (it.hours.ifBlank { "0" }.toIntOrNull() ?: 0) * 3600 +
+                                    (it.minutes.ifBlank { "0" }.toIntOrNull() ?: 0) * 60 +
+                                    (it.seconds.ifBlank { "0" }.toIntOrNull() ?: 0)
+                                }
+                            }
+                            else if (timerTriple != null) {
+                                val (h, m, s) = timerTriple
+                                (h.ifBlank { "0" }.toIntOrNull() ?: 0) * 3600 +
+                                        (m.ifBlank { "0" }.toIntOrNull() ?: 0) * 60 +
+                                        (s.ifBlank { "0" }.toIntOrNull() ?: 0)
+                            }else null
                             val task = com.example.exampractisehelper.data.entities.Task(
                                 taskId = 0,
                                 sessionId = 0, // Will be set in repository
@@ -629,8 +618,8 @@ fun CreateSessionScreen(
                         viewModel.createSession(
                             session = session,
                             tasksWithSubtasks = tasksWithSubtasks,
-                            onSuccess = {
-                                navController.popBackStack()
+                            onSuccess = { newSessionId ->
+                                navController.navigate("session_detail/$newSessionId")
                             }
                         )
                     },
