@@ -78,6 +78,8 @@ fun AddTaskComponent(
         }
         if (askSubtask == false) {
             Spacer(Modifier.height(8.dp))
+            // Task timer label
+            Text("Task Duration", style = MaterialTheme.typography.labelMedium)
             Row(
                 Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
@@ -87,8 +89,7 @@ fun AddTaskComponent(
                     onValueChange = onTaskHoursChange,
                     label = { Text("HH") },
                     singleLine = true,
-                    modifier = Modifier.weight(1f),
-                    placeholder = null
+                    modifier = Modifier.weight(1f)
                 )
                 Spacer(Modifier.width(8.dp))
                 OutlinedTextField(
@@ -96,8 +97,7 @@ fun AddTaskComponent(
                     onValueChange = onTaskMinutesChange,
                     label = { Text("MM") },
                     singleLine = true,
-                    modifier = Modifier.weight(1f),
-                    placeholder = null
+                    modifier = Modifier.weight(1f)
                 )
                 Spacer(Modifier.width(8.dp))
                 OutlinedTextField(
@@ -105,8 +105,7 @@ fun AddTaskComponent(
                     onValueChange = onTaskSecondsChange,
                     label = { Text("SS") },
                     singleLine = true,
-                    modifier = Modifier.weight(1f),
-                    placeholder = null
+                    modifier = Modifier.weight(1f)
                 )
             }
         } else if (askSubtask == true && onAddSubtask != null && onSubtaskNameChange != null && onSubtaskHoursChange != null && onSubtaskMinutesChange != null && onSubtaskSecondsChange != null) {

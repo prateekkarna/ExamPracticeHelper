@@ -32,6 +32,8 @@ fun AddSubtaskComponent(
             )
         }
         Spacer(Modifier.height(8.dp))
+        // Subtask timer label
+        Text("Subtask Duration", style = MaterialTheme.typography.labelMedium)
         // Subtask timer row
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             OutlinedTextField(

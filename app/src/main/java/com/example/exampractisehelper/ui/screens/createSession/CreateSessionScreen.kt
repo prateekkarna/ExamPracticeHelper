@@ -81,6 +81,48 @@ fun CreateSessionScreen(
                 )
             }
             Spacer(Modifier.height(24.dp))
+            // Session Duration is now always visible
+            Text("Session Duration" + if (addTasks == true) " (optional)" else "*")
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                OutlinedTextField(
+                    value = sessionHours,
+                    onValueChange = { sessionHours = it.filter { c -> c.isDigit() } },
+                    label = { Text("HH") },
+                    singleLine = true,
+                    modifier = Modifier.weight(1f),
+                    placeholder = null,
+                    isError = addTasks == false && sessionHours.isBlank() && sessionMinutes.isBlank() && sessionSeconds.isBlank()
+                )
+                Spacer(Modifier.width(8.dp))
+                OutlinedTextField(
+                    value = sessionMinutes,
+                    onValueChange = { sessionMinutes = it.filter { c -> c.isDigit() } },
+                    label = { Text("MM") },
+                    singleLine = true,
+                    modifier = Modifier.weight(1f),
+                    placeholder = null,
+                    isError = addTasks == false && sessionHours.isBlank() && sessionMinutes.isBlank() && sessionSeconds.isBlank()
+                )
+                Spacer(Modifier.width(8.dp))
+                OutlinedTextField(
+                    value = sessionSeconds,
+                    onValueChange = { sessionSeconds = it.filter { c -> c.isDigit() } },
+                    label = { Text("SS") },
+                    singleLine = true,
+                    modifier = Modifier.weight(1f),
+                    placeholder = null,
+                    isError = addTasks == false && sessionHours.isBlank() && sessionMinutes.isBlank() && sessionSeconds.isBlank()
+                )
+            }
+            if (addTasks == false && sessionHours.isBlank() && sessionMinutes.isBlank() && sessionSeconds.isBlank()) {
+                Text(
+                    text = "Session duration is required when no tasks are added",
+                    color = MaterialTheme.colorScheme.error,
+                    style = MaterialTheme.typography.bodySmall,
+                    modifier = Modifier.padding(top = 4.dp, start = 8.dp)
+                )
+            }
+            Spacer(Modifier.height(24.dp))
             Text("Do you want to add tasks to this session?", style = MaterialTheme.typography.titleMedium)
             Row(
                 Modifier.padding(vertical = 8.dp),
@@ -328,11 +370,18 @@ fun CreateSessionScreen(
                     // Save session logic
                     // Compose PracticeSession, Task, Subtask objects from UI state
                     // For demonstration, only sessionName is used
+                    val totalDuration = if (
+                        sessionHours.isNotBlank() || sessionMinutes.isNotBlank() || sessionSeconds.isNotBlank()
+                    ) {
+                        (sessionHours.ifBlank { "0" }.toIntOrNull() ?: 0) * 3600 +
+                        (sessionMinutes.ifBlank { "0" }.toIntOrNull() ?: 0) * 60 +
+                        (sessionSeconds.ifBlank { "0" }.toIntOrNull() ?: 0)
+                    } else null
                     val session = com.example.exampractisehelper.data.entities.PracticeSession(
                         sessionId = 0,
                         name = sessionName,
                         isTimed = addTasks == false,
-                        totalDuration = if (addTasks == false) ((sessionHours.ifBlank { "0" }.toIntOrNull() ?: 0) * 3600 + (sessionMinutes.ifBlank { "0" }.toIntOrNull() ?: 0) * 60 + (sessionSeconds.ifBlank { "0" }.toIntOrNull() ?: 0)) else null
+                        totalDuration = totalDuration
                     )
                     val tasksWithSubtasks = tasks.map { (taskName, subtasks) ->
                         val task = com.example.exampractisehelper.data.entities.Task(
@@ -361,7 +410,7 @@ fun CreateSessionScreen(
                         }
                     )
                 },
-                enabled = sessionName.isNotEmpty() && addTasks != null,
+                enabled = sessionName.isNotEmpty() && addTasks != null && (addTasks == true || (sessionHours.isNotBlank() || sessionMinutes.isNotBlank() || sessionSeconds.isNotBlank())),
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text("Create Session")
