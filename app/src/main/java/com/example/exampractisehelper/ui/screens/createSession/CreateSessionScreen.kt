@@ -136,6 +136,9 @@ fun CreateSessionScreen(
                         // Show timer only if "No" is selected
                         if (addTasks == false) {
                             Text("Session Duration*", style = MaterialTheme.typography.titleMedium)
+                            val isSessionMinutesValid = sessionMinutes.isBlank() || (sessionMinutes.toIntOrNull() ?: 0) in 0..59
+                            val isSessionSecondsValid = sessionSeconds.isBlank() || (sessionSeconds.toIntOrNull() ?: 0) in 0..59
+                            val isSessionDurationValid = sessionHours.isNotBlank() || sessionMinutes.isNotBlank() || sessionSeconds.isNotBlank()
                             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                                 OutlinedTextField(
                                     value = sessionHours,
@@ -144,7 +147,7 @@ fun CreateSessionScreen(
                                     singleLine = true,
                                     modifier = Modifier.weight(1f),
                                     placeholder = null,
-                                    isError = sessionHours.isBlank() && sessionMinutes.isBlank() && sessionSeconds.isBlank()
+                                    isError = !isSessionDurationValid
                                 )
                                 Spacer(Modifier.width(8.dp))
                                 OutlinedTextField(
@@ -154,7 +157,7 @@ fun CreateSessionScreen(
                                     singleLine = true,
                                     modifier = Modifier.weight(1f),
                                     placeholder = null,
-                                    isError = sessionMinutes.isNotBlank() && (sessionMinutes.toIntOrNull() ?: 0) !in 0..59
+                                    isError = !isSessionMinutesValid
                                 )
                                 Spacer(Modifier.width(8.dp))
                                 OutlinedTextField(
@@ -164,18 +167,18 @@ fun CreateSessionScreen(
                                     singleLine = true,
                                     modifier = Modifier.weight(1f),
                                     placeholder = null,
-                                    isError = sessionSeconds.isNotBlank() && (sessionSeconds.toIntOrNull() ?: 0) !in 0..59
+                                    isError = !isSessionSecondsValid
                                 )
                             }
-                            if (sessionHours.isBlank() && sessionMinutes.isBlank() && sessionSeconds.isBlank()) {
+                            if (!isSessionDurationValid) {
                                 Text(
-                                    text = "Session duration is required when no tasks are added",
+                                    text = "Session duration is required (enter at least one field)",
                                     color = MaterialTheme.colorScheme.error,
                                     style = MaterialTheme.typography.bodySmall,
                                     modifier = Modifier.padding(top = 4.dp, start = 8.dp)
                                 )
                             }
-                            if (sessionMinutes.isNotBlank() && (sessionMinutes.toIntOrNull() ?: 0) !in 0..59) {
+                            if (!isSessionMinutesValid && sessionMinutes.isNotBlank()) {
                                 Text(
                                     text = "Minutes must be between 0 and 59",
                                     color = MaterialTheme.colorScheme.error,
@@ -183,7 +186,7 @@ fun CreateSessionScreen(
                                     modifier = Modifier.padding(top = 4.dp, start = 8.dp)
                                 )
                             }
-                            if (sessionSeconds.isNotBlank() && (sessionSeconds.toIntOrNull() ?: 0) !in 0..59) {
+                            if (!isSessionSecondsValid && sessionSeconds.isNotBlank()) {
                                 Text(
                                     text = "Seconds must be between 0 and 59",
                                     color = MaterialTheme.colorScheme.error,
@@ -312,8 +315,12 @@ fun CreateSessionScreen(
                                                             ),
                                                             modifier = Modifier.weight(1f)
                                                         )
+                                                        val h = totalTaskSeconds?.div(3600) ?: 0
+                                                        val m = totalTaskSeconds?.rem(3600)?.div(60) ?: 0
+                                                        val s = totalTaskSeconds?.rem(60) ?: 0
+                                                        val taskDurationFormat = String.format("%dh %dm %ds", h, m, s)
                                                         Text(
-                                                            text = formattedTaskDuration,
+                                                            text = taskDurationFormat,
                                                             style = MaterialTheme.typography.bodyMedium.copy(
                                                                 color = MaterialTheme.colorScheme.primary,
                                                                 fontWeight = FontWeight.Medium
