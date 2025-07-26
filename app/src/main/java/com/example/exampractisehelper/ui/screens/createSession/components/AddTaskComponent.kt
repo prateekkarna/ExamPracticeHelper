@@ -50,8 +50,9 @@ fun AddTaskComponent(
     var isEditingSubtask by remember { mutableStateOf(false) }
 
     // Validation for task timer fields
-    val isTaskMinutesValid = taskMinutes.toIntOrNull() != null && taskMinutes.toInt() in 0..59
-    val isTaskSecondsValid = taskSeconds.toIntOrNull() != null && taskSeconds.toInt() in 0..59
+    val isTaskMinutesValid = taskMinutes.isBlank() || (taskMinutes.toIntOrNull() ?: 0) in 0..59
+    val isTaskSecondsValid = taskSeconds.isBlank() || (taskSeconds.toIntOrNull() ?: 0) in 0..59
+    val isTaskDurationValid = taskHours.isNotBlank() || taskMinutes.isNotBlank() || taskSeconds.isNotBlank()
 
     Column {
         Row(
@@ -155,8 +156,12 @@ fun AddTaskComponent(
                 Text("Added Subtasks:", style = MaterialTheme.typography.titleSmall)
                 Column(Modifier.padding(start = 8.dp)) {
                     subtasksForCurrentTask.forEachIndexed { idx: Int, subtask: Subtask ->
+                        val h = subtask.hours.ifBlank { "0" }.toIntOrNull() ?: 0
+                        val m = subtask.minutes.ifBlank { "0" }.toIntOrNull() ?: 0
+                        val s = subtask.seconds.ifBlank { "0" }.toIntOrNull() ?: 0
+                        val subtaskDuration = String.format("%dh %dm %ds", h, m, s)
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text("${idx + 1}. ${subtask.name} (${subtask.hours}h ${subtask.minutes}m ${subtask.seconds}s)", Modifier.weight(1f))
+                            Text("${idx + 1}. ${subtask.name} ($subtaskDuration)", Modifier.weight(1f))
                             IconButton(onClick = {
                                 // Prefill the subtask fields for editing
                                 onSubtaskNameChange?.invoke(subtask.name)
@@ -183,7 +188,7 @@ fun AddTaskComponent(
             Button(
                 onClick = onAddTask,
                 enabled = isAddEnabled && (askSubtask == false).let {
-                    if (it) taskHours.isNotBlank() && taskMinutes.isNotBlank() && taskSeconds.isNotBlank() && isTaskMinutesValid && isTaskSecondsValid else true
+                    if (it) isTaskDurationValid && isTaskMinutesValid && isTaskSecondsValid else true
                 }
             ) {
                 Text(buttonText ?: "Add Task")

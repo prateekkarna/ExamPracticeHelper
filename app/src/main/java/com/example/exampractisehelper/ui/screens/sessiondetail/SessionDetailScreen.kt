@@ -51,14 +51,13 @@ fun SessionDetailScreen(
             } else {
                 Text("Name: ${session.name}")
                 Spacer(Modifier.height(8.dp))
-                Text("Timed: ${if (session.isTimed) "Yes" else "No"}")
-                if (session.isTimed) {
-                    Text("Duration: ${session.totalDuration ?: 0} min")
+                val durationSecs = session.totalDuration ?: 0
+                if (durationSecs > 0) {
+                    val h = durationSecs / 3600
+                    val m = (durationSecs % 3600) / 60
+                    val s = durationSecs % 60
+                    Text("Duration: ${h}h ${m}m ${s}s")
                 }
-                Spacer(Modifier.height(8.dp))
-                Text("Loop: ${if (session.loopEnabled) "Yes (${session.loopCount})" else "No"}")
-                Spacer(Modifier.height(8.dp))
-                Text("Simple Session: ${if (session.isSimpleSession) "Yes" else "No"}")
                 Spacer(Modifier.height(16.dp))
                 Text("Tasks:", style = MaterialTheme.typography.titleMedium)
                 if (tasks.isEmpty()) {
@@ -68,9 +67,12 @@ fun SessionDetailScreen(
                         Card(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
                             Column(modifier = Modifier.padding(8.dp)) {
                                 Text("Task: ${task.text}")
-                                Text("Type: ${task.typeLabel}")
-                                if (task.taskDuration != null) {
-                                    Text("Duration: ${task.taskDuration} min")
+                                val duration = task.taskDuration ?: 0
+                                if (duration > 0) {
+                                    val h = duration / 3600
+                                    val m = (duration % 3600) / 60
+                                    val s = duration % 60
+                                    Text("Task Duration: ${h}h ${m}m ${s}s")
                                 }
                                 if (task.hasSubtasks) {
                                     val subtasks = subtasksMap[task.taskId] ?: emptyList()
@@ -78,7 +80,10 @@ fun SessionDetailScreen(
                                         Spacer(Modifier.height(4.dp))
                                         Text("Subtasks:", style = MaterialTheme.typography.bodyMedium)
                                         subtasks.forEach { subtask ->
-                                            Text("- ${subtask.name} (${subtask.duration} min)")
+                                            val sh = subtask.duration / 3600
+                                            val sm = (subtask.duration % 3600) / 60
+                                            val ss = subtask.duration % 60
+                                            Text("- ${subtask.name} (${sh}h ${sm}m ${ss}s)")
                                         }
                                     } else {
                                         Text("No subtasks.")

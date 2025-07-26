@@ -60,11 +60,13 @@ fun CreateSessionScreen(
             }
         } else if (timerTriple != null) {
             val (h, m, s) = timerTriple
-            (h.ifBlank { "0" }.toIntOrNull() ?: 0) * 3600 + (m.ifBlank { "0" }.toIntOrNull() ?: 0) * 60 + (s.ifBlank { "0" }.toIntOrNull() ?: 0)
-        } else null
+            (h.ifBlank { "0" }.toIntOrNull() ?: 0) * 3600 +
+            (m.ifBlank { "0" }.toIntOrNull() ?: 0) * 60 +
+            (s.ifBlank { "0" }.toIntOrNull() ?: 0)
+        } else 0
         val task = com.example.exampractisehelper.data.entities.Task(
             taskId = 0,
-            sessionId = 0,
+            sessionId = 0, // Will be set in repository
             text = taskName,
             hasSubtasks = hasSubtasks,
             taskDuration = taskDuration,
@@ -73,7 +75,7 @@ fun CreateSessionScreen(
         val subtaskEntities = subtasks.map {
             com.example.exampractisehelper.data.entities.Subtask(
                 subtaskId = 0,
-                taskId = 0,
+                taskId = 0, // Will be set in repository
                 name = it.name,
                 duration = ((it.hours.ifBlank { "0" }.toIntOrNull() ?: 0) * 3600 + (it.minutes.ifBlank { "0" }.toIntOrNull() ?: 0) * 60 + (it.seconds.ifBlank { "0" }.toIntOrNull() ?: 0))
             )
@@ -136,6 +138,9 @@ fun CreateSessionScreen(
                         // Show timer only if "No" is selected
                         if (addTasks == false) {
                             Text("Session Duration*", style = MaterialTheme.typography.titleMedium)
+                            val isSessionMinutesValid = sessionMinutes.isBlank() || (sessionMinutes.toIntOrNull() ?: 0) in 0..59
+                            val isSessionSecondsValid = sessionSeconds.isBlank() || (sessionSeconds.toIntOrNull() ?: 0) in 0..59
+                            val isSessionDurationValid = sessionHours.isNotBlank() || sessionMinutes.isNotBlank() || sessionSeconds.isNotBlank()
                             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                                 OutlinedTextField(
                                     value = sessionHours,
@@ -144,7 +149,7 @@ fun CreateSessionScreen(
                                     singleLine = true,
                                     modifier = Modifier.weight(1f),
                                     placeholder = null,
-                                    isError = sessionHours.isBlank() && sessionMinutes.isBlank() && sessionSeconds.isBlank()
+                                    isError = !isSessionDurationValid
                                 )
                                 Spacer(Modifier.width(8.dp))
                                 OutlinedTextField(
@@ -154,7 +159,7 @@ fun CreateSessionScreen(
                                     singleLine = true,
                                     modifier = Modifier.weight(1f),
                                     placeholder = null,
-                                    isError = sessionMinutes.isNotBlank() && (sessionMinutes.toIntOrNull() ?: 0) !in 0..59
+                                    isError = !isSessionMinutesValid
                                 )
                                 Spacer(Modifier.width(8.dp))
                                 OutlinedTextField(
@@ -164,18 +169,18 @@ fun CreateSessionScreen(
                                     singleLine = true,
                                     modifier = Modifier.weight(1f),
                                     placeholder = null,
-                                    isError = sessionSeconds.isNotBlank() && (sessionSeconds.toIntOrNull() ?: 0) !in 0..59
+                                    isError = !isSessionSecondsValid
                                 )
                             }
-                            if (sessionHours.isBlank() && sessionMinutes.isBlank() && sessionSeconds.isBlank()) {
+                            if (!isSessionDurationValid) {
                                 Text(
-                                    text = "Session duration is required when no tasks are added",
+                                    text = "Session duration is required (enter at least one field)",
                                     color = MaterialTheme.colorScheme.error,
                                     style = MaterialTheme.typography.bodySmall,
                                     modifier = Modifier.padding(top = 4.dp, start = 8.dp)
                                 )
                             }
-                            if (sessionMinutes.isNotBlank() && (sessionMinutes.toIntOrNull() ?: 0) !in 0..59) {
+                            if (!isSessionMinutesValid && sessionMinutes.isNotBlank()) {
                                 Text(
                                     text = "Minutes must be between 0 and 59",
                                     color = MaterialTheme.colorScheme.error,
@@ -183,7 +188,7 @@ fun CreateSessionScreen(
                                     modifier = Modifier.padding(top = 4.dp, start = 8.dp)
                                 )
                             }
-                            if (sessionSeconds.isNotBlank() && (sessionSeconds.toIntOrNull() ?: 0) !in 0..59) {
+                            if (!isSessionSecondsValid && sessionSeconds.isNotBlank()) {
                                 Text(
                                     text = "Seconds must be between 0 and 59",
                                     color = MaterialTheme.colorScheme.error,
@@ -312,8 +317,12 @@ fun CreateSessionScreen(
                                                             ),
                                                             modifier = Modifier.weight(1f)
                                                         )
+                                                        val h = totalTaskSeconds?.div(3600) ?: 0
+                                                        val m = totalTaskSeconds?.rem(3600)?.div(60) ?: 0
+                                                        val s = totalTaskSeconds?.rem(60) ?: 0
+                                                        val taskDurationFormat = String.format("%dh %dm %ds", h, m, s)
                                                         Text(
-                                                            text = formattedTaskDuration,
+                                                            text = taskDurationFormat,
                                                             style = MaterialTheme.typography.bodyMedium.copy(
                                                                 color = MaterialTheme.colorScheme.primary,
                                                                 fontWeight = FontWeight.Medium
@@ -567,40 +576,27 @@ fun CreateSessionScreen(
                         // Save session logic
                         // Compose PracticeSession, Task, Subtask objects from UI state
                         // For demonstration, only sessionName is used
-                        val totalDuration = if (
-                            sessionHours.isNotBlank() || sessionMinutes.isNotBlank() || sessionSeconds.isNotBlank()
-                        ) {
-                            (sessionHours.ifBlank { "0" }.toIntOrNull() ?: 0) * 3600 +
-                            (sessionMinutes.ifBlank { "0" }.toIntOrNull() ?: 0) * 60 +
-                            (sessionSeconds.ifBlank { "0" }.toIntOrNull() ?: 0)
-                        } else null
                         val session = com.example.exampractisehelper.data.entities.PracticeSession(
                             sessionId = 0,
                             name = sessionName,
-                            isTimed = totalDuration != null,
-                            totalDuration = totalDuration
+                            isTimed = false,
+                            totalDuration = null
                         )
-                        val tasksWithSubtasks = tasks.map { (taskName, subtasks) ->
+                        val tasksWithSubtasks = tasks.map { (taskName, subtasks, timerTriple) ->
                             val hasSubtasks = subtasks.isNotEmpty()
-                            val taskDuration = if (!hasSubtasks) {
-                                // Find the original task in tasks list for editing
-                                val originalTask = tasks.find { it.first == taskName }
-                                if (originalTask != null && originalTask.second.isEmpty()) {
-                                    // Try to get timer from backup if editing
-                                    val backup = editingTaskBackup
-                                    if (backup != null && backup.first == taskName && backup.second.isEmpty()) {
-                                        val h = currentTaskHours.ifBlank { "0" }.toIntOrNull() ?: 0
-                                        val m = currentTaskMinutes.ifBlank { "0" }.toIntOrNull() ?: 0
-                                        val s = currentTaskSeconds.ifBlank { "0" }.toIntOrNull() ?: 0
-                                        h * 3600 + m * 60 + s
-                                    } else {
-                                        val h = currentTaskHours.ifBlank { "0" }.toIntOrNull() ?: 0
-                                        val m = currentTaskMinutes.ifBlank { "0" }.toIntOrNull() ?: 0
-                                        val s = currentTaskSeconds.ifBlank { "0" }.toIntOrNull() ?: 0
-                                        h * 3600 + m * 60 + s
-                                    }
-                                } else null
-                            } else null
+                            val taskDuration = if (hasSubtasks) {
+                                subtasks.sumOf {
+                                    (it.hours.ifBlank { "0" }.toIntOrNull() ?: 0) * 3600 +
+                                    (it.minutes.ifBlank { "0" }.toIntOrNull() ?: 0) * 60 +
+                                    (it.seconds.ifBlank { "0" }.toIntOrNull() ?: 0)
+                                }
+                            }
+                            else if (timerTriple != null) {
+                                val (h, m, s) = timerTriple
+                                (h.ifBlank { "0" }.toIntOrNull() ?: 0) * 3600 +
+                                        (m.ifBlank { "0" }.toIntOrNull() ?: 0) * 60 +
+                                        (s.ifBlank { "0" }.toIntOrNull() ?: 0)
+                            }else null
                             val task = com.example.exampractisehelper.data.entities.Task(
                                 taskId = 0,
                                 sessionId = 0, // Will be set in repository
@@ -622,8 +618,8 @@ fun CreateSessionScreen(
                         viewModel.createSession(
                             session = session,
                             tasksWithSubtasks = tasksWithSubtasks,
-                            onSuccess = {
-                                navController.popBackStack()
+                            onSuccess = { newSessionId ->
+                                navController.navigate("session_detail/$newSessionId")
                             }
                         )
                     },

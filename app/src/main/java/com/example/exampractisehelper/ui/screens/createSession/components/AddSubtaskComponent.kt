@@ -21,8 +21,9 @@ fun AddSubtaskComponent(
     isAddEnabled: Boolean,
     buttonText: String = "Add Subtask"
 ) {
-    val isMinutesValid = subtaskMinutes.toIntOrNull() != null && subtaskMinutes.toInt() in 0..59
-    val isSecondsValid = subtaskSeconds.toIntOrNull() != null && subtaskSeconds.toInt() in 0..59
+    val isMinutesValid = subtaskMinutes.isBlank() || (subtaskMinutes.toIntOrNull() ?: 0) in 0..59
+    val isSecondsValid = subtaskSeconds.isBlank() || (subtaskSeconds.toIntOrNull() ?: 0) in 0..59
+    val isDurationValid = subtaskHours.isNotBlank() || subtaskMinutes.isNotBlank() || subtaskSeconds.isNotBlank()
 
     Column {
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
@@ -86,7 +87,7 @@ fun AddSubtaskComponent(
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             Button(
                 onClick = onAddSubtask,
-                enabled = isAddEnabled && subtaskHours.isNotBlank() && subtaskMinutes.isNotBlank() && subtaskSeconds.isNotBlank() && isMinutesValid && isSecondsValid
+                enabled = isAddEnabled && isDurationValid && isMinutesValid && isSecondsValid
             ) {
                 Text(buttonText)
             }

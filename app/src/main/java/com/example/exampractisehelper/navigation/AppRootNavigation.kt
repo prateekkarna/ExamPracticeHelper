@@ -133,8 +133,43 @@ fun AppRootNavigation() {
                     subtasksMap = subtasksMap,
                     onEdit = { /* TODO: Implement edit */ },
                     onDelete = { /* TODO: Implement delete */ },
-                    onRun = { /* TODO: Implement run */ }
+                    onRun = {
+                        session?.let {
+                            navController.navigate("run_session/${it.sessionId}")
+                        }
+                    }
                 )
+            }
+            composable(
+                route = "run_session/{sessionId}",
+                arguments = listOf(
+                    navArgument("sessionId") { type = NavType.IntType }
+                )
+            ) { backStackEntry ->
+                val sessionId = backStackEntry.arguments?.getInt("sessionId") ?: 0
+                val context = androidx.compose.ui.platform.LocalContext.current
+                val db = androidx.room.Room.databaseBuilder(
+                    context,
+                    com.example.exampractisehelper.data.database.PracticeDatabase::class.java,
+                    "exam_practise_helper_db_v2"
+                )
+                .fallbackToDestructiveMigration()
+                .fallbackToDestructiveMigrationOnDowngrade()
+                .build()
+                val sessionRepository = com.example.exampractisehelper.data.repository.PracticeSessionRepositoryImpl(db.practiceSessionDao())
+                val taskDao = db.taskDao()
+                val sessionState = androidx.compose.runtime.produceState<Pair<com.example.exampractisehelper.data.entities.PracticeSession?, List<String>>?>(initialValue = null, sessionId) {
+                    val session = sessionRepository.getAllSessions().find { it.sessionId == sessionId }
+                    val tasks = taskDao.getTasksForSession(sessionId).map { it.text }
+                    value = session to tasks
+                }
+                sessionState.value?.let { (session, taskNames) ->
+                    com.example.exampractisehelper.ui.screens.runsession.RunSessionScreen(
+                        sessionName = session?.name ?: "Session",
+                        tasks = taskNames,
+                        navController = navController
+                    )
+                }
             }
         }
     }
