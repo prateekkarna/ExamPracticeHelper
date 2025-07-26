@@ -34,7 +34,7 @@ fun CreateSessionScreen(
     var sessionMinutes by remember { mutableStateOf("") }
     var sessionSeconds by remember { mutableStateOf("") }
     var taskName by remember { mutableStateOf("") }
-    var tasks by remember { mutableStateOf(listOf<Pair<String, List<Subtask>>>()) }
+    var tasks by remember { mutableStateOf(listOf<Triple<String, List<Subtask>, Triple<String, String, String>?>>()) }
     var currentTaskName by remember { mutableStateOf("") }
     var currentTaskHours by remember { mutableStateOf("") }
     var currentTaskMinutes by remember { mutableStateOf("") }
@@ -48,8 +48,38 @@ fun CreateSessionScreen(
     var showTaskDialog by remember { mutableStateOf(false) }
     var isEditingTask by remember { mutableStateOf(false) }
     var editingTaskIndex by remember { mutableStateOf(-1) }
-    var editingTaskBackup by remember { mutableStateOf<Pair<String, List<Subtask>>?>(null) }
+    var editingTaskBackup by remember { mutableStateOf<Triple<String, List<Subtask>, Triple<String, String, String>?>?>(null) }
     val scrollState = rememberScrollState()
+    val tasksWithSubtasks = tasks.map { (taskName, subtasks, timerTriple) ->
+        val hasSubtasks = subtasks.isNotEmpty()
+        val taskDuration = if (hasSubtasks) {
+            subtasks.sumOf {
+                (it.hours.ifBlank { "0" }.toIntOrNull() ?: 0) * 3600 +
+                (it.minutes.ifBlank { "0" }.toIntOrNull() ?: 0) * 60 +
+                (it.seconds.ifBlank { "0" }.toIntOrNull() ?: 0)
+            }
+        } else if (timerTriple != null) {
+            val (h, m, s) = timerTriple
+            (h.ifBlank { "0" }.toIntOrNull() ?: 0) * 3600 + (m.ifBlank { "0" }.toIntOrNull() ?: 0) * 60 + (s.ifBlank { "0" }.toIntOrNull() ?: 0)
+        } else null
+        val task = com.example.exampractisehelper.data.entities.Task(
+            taskId = 0,
+            sessionId = 0,
+            text = taskName,
+            hasSubtasks = hasSubtasks,
+            taskDuration = taskDuration,
+            typeLabel = ""
+        )
+        val subtaskEntities = subtasks.map {
+            com.example.exampractisehelper.data.entities.Subtask(
+                subtaskId = 0,
+                taskId = 0,
+                name = it.name,
+                duration = ((it.hours.ifBlank { "0" }.toIntOrNull() ?: 0) * 3600 + (it.minutes.ifBlank { "0" }.toIntOrNull() ?: 0) * 60 + (it.seconds.ifBlank { "0" }.toIntOrNull() ?: 0))
+            )
+        }
+        task to subtaskEntities
+    }
     Box(
         modifier = Modifier.fillMaxSize()
     ) {
@@ -182,6 +212,10 @@ fun CreateSessionScreen(
                                 Button(onClick = {
                                     showTaskDialog = true
                                     isEditingTask = false
+                                    // Reset timer fields when adding new task
+                                    currentTaskHours = ""
+                                    currentTaskMinutes = ""
+                                    currentTaskSeconds = ""
                                 }) {
                                     Icon(Icons.Default.Add, contentDescription = "Add Task")
                                 }
@@ -195,12 +229,14 @@ fun CreateSessionScreen(
                                         .fillMaxWidth()
                                         .heightIn(max = 250.dp)
                                 ) {
-                                    itemsIndexed(tasks) { idx, (task, subtasks) ->
+                                    itemsIndexed(tasks) { idx, (taskName, subtasks, timerTriple) ->
+                                        // Find the corresponding Task entity for this taskName
+                                        val taskEntity = tasksWithSubtasks.find { it.first.text == taskName }?.first
                                         val totalTaskSeconds = if (subtasks.isNotEmpty()) subtasks.sumOf {
                                             (it.hours.ifBlank { "0" }.toIntOrNull() ?: 0) * 3600 +
                                             (it.minutes.ifBlank { "0" }.toIntOrNull() ?: 0) * 60 +
                                             (it.seconds.ifBlank { "0" }.toIntOrNull() ?: 0)
-                                        } else null
+                                        } else taskEntity?.taskDuration
                                         val formattedTaskDuration = totalTaskSeconds?.let { secs ->
                                             val h = secs / 3600
                                             val m = (secs % 3600) / 60
@@ -221,7 +257,7 @@ fun CreateSessionScreen(
                                                 // Task name, edit, delete in one row
                                                 Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
                                                     Text(
-                                                        text = task,
+                                                        text = taskName,
                                                         style = MaterialTheme.typography.titleLarge.copy(
                                                             fontWeight = FontWeight.Bold,
                                                             color = MaterialTheme.colorScheme.primary
@@ -232,20 +268,28 @@ fun CreateSessionScreen(
                                                     Row(verticalAlignment = Alignment.CenterVertically) {
                                                         IconButton(onClick = {
                                                             // Edit task logic
-                                                            currentTaskName = task
+                                                            currentTaskName = taskName
                                                             askSubtask = if (subtasks.isNotEmpty()) true else false
                                                             subtasksForCurrentTask = subtasks
                                                             showTaskDialog = true
                                                             isEditingTask = true
                                                             editingTaskIndex = idx
-                                                            editingTaskBackup = task to subtasks
-                                                            currentTaskHours = ""
-                                                            currentTaskMinutes = ""
-                                                            currentTaskSeconds = ""
+                                                            editingTaskBackup = Triple(taskName, subtasks, tasks[idx].third)
+                                                            if (subtasks.isEmpty()) {
+                                                                val timerTriple = tasks[idx].third
+                                                                currentTaskHours = timerTriple?.first ?: ""
+                                                                currentTaskMinutes = timerTriple?.second ?: ""
+                                                                currentTaskSeconds = timerTriple?.third ?: ""
+                                                            } else {
+                                                                currentTaskHours = ""
+                                                                currentTaskMinutes = ""
+                                                                currentTaskSeconds = ""
+                                                            }
                                                             currentSubtaskName = ""
                                                             currentSubtaskHours = ""
                                                             currentSubtaskMinutes = ""
                                                             currentSubtaskSeconds = ""
+                                                            // Remove the task from the list so it can be re-added after editing
                                                             tasks = tasks.toMutableList().also { it.removeAt(idx) }
                                                         }) {
                                                             Icon(Icons.Default.Edit, contentDescription = "Edit Task")
@@ -259,10 +303,6 @@ fun CreateSessionScreen(
                                                 }
                                                 // Task Duration row
                                                 if (formattedTaskDuration != null) {
-                                                    val h = subtasks.sumOf { it.hours.ifBlank { "0" }.toIntOrNull() ?: 0 }
-                                                    val m = subtasks.sumOf { it.minutes.ifBlank { "0" }.toIntOrNull() ?: 0 }
-                                                    val s = subtasks.sumOf { it.seconds.ifBlank { "0" }.toIntOrNull() ?: 0 }
-                                                    val taskDuration = String.format("%dh %dm %ds", h, m, s)
                                                     Row(modifier = Modifier.fillMaxWidth()) {
                                                         Text(
                                                             text = "Task Duration",
@@ -273,7 +313,7 @@ fun CreateSessionScreen(
                                                             modifier = Modifier.weight(1f)
                                                         )
                                                         Text(
-                                                            text = taskDuration,
+                                                            text = formattedTaskDuration,
                                                             style = MaterialTheme.typography.bodyMedium.copy(
                                                                 color = MaterialTheme.colorScheme.primary,
                                                                 fontWeight = FontWeight.Medium
@@ -400,11 +440,11 @@ fun CreateSessionScreen(
                                                 },
                                                 onAddTask = {
                                                     if (currentTaskName.isNotBlank()) {
-                                                        val taskDuration = if (askSubtask == true) null else Triple(currentTaskHours, currentTaskMinutes, currentTaskSeconds)
+                                                        val timerTriple = if (askSubtask == true) null else Triple(currentTaskHours, currentTaskMinutes, currentTaskSeconds)
                                                         if (isEditingTask && editingTaskIndex >= 0) {
-                                                            tasks = tasks.toMutableList().apply { add(editingTaskIndex, currentTaskName to subtasksForCurrentTask) }
+                                                            tasks = tasks.toMutableList().apply { add(editingTaskIndex, Triple(currentTaskName, subtasksForCurrentTask, timerTriple)) }
                                                         } else {
-                                                            tasks = tasks + (currentTaskName to subtasksForCurrentTask)
+                                                            tasks = tasks + Triple(currentTaskName, subtasksForCurrentTask, timerTriple)
                                                         }
                                                         isEditingTask = false
                                                         editingTaskIndex = -1
@@ -541,12 +581,32 @@ fun CreateSessionScreen(
                             totalDuration = totalDuration
                         )
                         val tasksWithSubtasks = tasks.map { (taskName, subtasks) ->
+                            val hasSubtasks = subtasks.isNotEmpty()
+                            val taskDuration = if (!hasSubtasks) {
+                                // Find the original task in tasks list for editing
+                                val originalTask = tasks.find { it.first == taskName }
+                                if (originalTask != null && originalTask.second.isEmpty()) {
+                                    // Try to get timer from backup if editing
+                                    val backup = editingTaskBackup
+                                    if (backup != null && backup.first == taskName && backup.second.isEmpty()) {
+                                        val h = currentTaskHours.ifBlank { "0" }.toIntOrNull() ?: 0
+                                        val m = currentTaskMinutes.ifBlank { "0" }.toIntOrNull() ?: 0
+                                        val s = currentTaskSeconds.ifBlank { "0" }.toIntOrNull() ?: 0
+                                        h * 3600 + m * 60 + s
+                                    } else {
+                                        val h = currentTaskHours.ifBlank { "0" }.toIntOrNull() ?: 0
+                                        val m = currentTaskMinutes.ifBlank { "0" }.toIntOrNull() ?: 0
+                                        val s = currentTaskSeconds.ifBlank { "0" }.toIntOrNull() ?: 0
+                                        h * 3600 + m * 60 + s
+                                    }
+                                } else null
+                            } else null
                             val task = com.example.exampractisehelper.data.entities.Task(
                                 taskId = 0,
                                 sessionId = 0, // Will be set in repository
                                 text = taskName,
-                                hasSubtasks = subtasks.isNotEmpty(),
-                                taskDuration = if (subtasks.isEmpty()) null else null, // You can calculate if needed
+                                hasSubtasks = hasSubtasks,
+                                taskDuration = taskDuration,
                                 typeLabel = ""
                             )
                             val subtaskEntities = subtasks.map {
