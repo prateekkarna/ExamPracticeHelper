@@ -9,7 +9,9 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.example.exampractisehelper.data.database.PracticeDatabase
 import com.example.exampractisehelper.data.repository.ExamRepository
+import com.example.exampractisehelper.data.repository.PracticeSessionRepositoryImpl
 import com.example.exampractisehelper.ui.components.ExamCard
+import com.example.exampractisehelper.ui.components.PracticeSessionCard
 import com.example.exampractisehelper.ui.screens.home.HomeViewModel
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
@@ -32,19 +34,25 @@ fun HomeScreen(
     val db = Room.databaseBuilder(
         context,
         PracticeDatabase::class.java,
-        "practice_db"
-    ).build()
+        "exam_practise_helper_db_v2"
+    )
+    .fallbackToDestructiveMigration()
+    .fallbackToDestructiveMigrationOnDowngrade()
+    .build()
     val repository = ExamRepository(db.examDao(), db.examTypeDao())
+    val sessionRepository = PracticeSessionRepositoryImpl(db.practiceSessionDao())
     val viewModel: HomeViewModel = viewModel(factory = object : androidx.lifecycle.ViewModelProvider.Factory {
         override fun <T : androidx.lifecycle.ViewModel> create(modelClass: Class<T>): T {
             @Suppress("UNCHECKED_CAST")
-            return HomeViewModel(repository) as T
+            return HomeViewModel(repository, sessionRepository) as T
         }
     })
     val exams by viewModel.exams.collectAsState()
+    val sessions by viewModel.sessions.collectAsState()
 
     LaunchedEffect(Unit) {
         viewModel.loadExams()
+        viewModel.loadSessions()
     }
 
     var searchQuery by rememberSaveable { mutableStateOf("") }
@@ -81,6 +89,16 @@ fun HomeScreen(
                 modifier = Modifier.fillMaxSize(),
                 contentPadding = PaddingValues(vertical = 8.dp)
             ) {
+                items(sessions.filter { it.name.contains(searchQuery, ignoreCase = true) }) { session ->
+                    PracticeSessionCard(
+                        session = session,
+                        modifier = Modifier
+                            .padding(8.dp)
+                            .clickable {
+                                navController.navigate("session_detail/${session.sessionId}")
+                            }
+                    )
+                }
                 items(exams.filter { it.name.contains(searchQuery, ignoreCase = true) }) { exam ->
                     ExamCard(
                         exam = exam,

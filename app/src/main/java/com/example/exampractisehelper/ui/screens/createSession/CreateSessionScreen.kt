@@ -14,11 +14,16 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import com.example.exampractisehelper.ui.screens.createSession.components.AddTaskComponent
+import androidx.navigation.NavController
+import androidx.hilt.navigation.compose.hiltViewModel
+import com.example.exampractisehelper.viewmodel.CreateSessionViewModel
 
 data class Subtask(val name: String, val hours: String, val minutes: String, val seconds: String)
 
 @Composable
 fun CreateSessionScreen(
+    navController: NavController,
+    viewModel: CreateSessionViewModel = hiltViewModel()
 ) {
     var sessionName by remember { mutableStateOf("") }
     var addTasks by remember { mutableStateOf<Boolean?>(null) }
@@ -319,7 +324,43 @@ fun CreateSessionScreen(
             }
             Spacer(Modifier.height(32.dp))
             Button(
-                onClick = { /* TODO: Save session logic */ },
+                onClick = {
+                    // Save session logic
+                    // Compose PracticeSession, Task, Subtask objects from UI state
+                    // For demonstration, only sessionName is used
+                    val session = com.example.exampractisehelper.data.entities.PracticeSession(
+                        sessionId = 0,
+                        name = sessionName,
+                        isTimed = addTasks == false,
+                        totalDuration = if (addTasks == false) ((sessionHours.ifBlank { "0" }.toIntOrNull() ?: 0) * 3600 + (sessionMinutes.ifBlank { "0" }.toIntOrNull() ?: 0) * 60 + (sessionSeconds.ifBlank { "0" }.toIntOrNull() ?: 0)) else null
+                    )
+                    val tasksWithSubtasks = tasks.map { (taskName, subtasks) ->
+                        val task = com.example.exampractisehelper.data.entities.Task(
+                            taskId = 0,
+                            sessionId = 0, // Will be set in repository
+                            text = taskName,
+                            hasSubtasks = subtasks.isNotEmpty(),
+                            taskDuration = if (subtasks.isEmpty()) null else null, // You can calculate if needed
+                            typeLabel = ""
+                        )
+                        val subtaskEntities = subtasks.map {
+                            com.example.exampractisehelper.data.entities.Subtask(
+                                subtaskId = 0,
+                                taskId = 0, // Will be set in repository
+                                name = it.name,
+                                duration = ((it.hours.ifBlank { "0" }.toIntOrNull() ?: 0) * 3600 + (it.minutes.ifBlank { "0" }.toIntOrNull() ?: 0) * 60 + (it.seconds.ifBlank { "0" }.toIntOrNull() ?: 0))
+                            )
+                        }
+                        task to subtaskEntities
+                    }
+                    viewModel.createSession(
+                        session = session,
+                        tasksWithSubtasks = tasksWithSubtasks,
+                        onSuccess = {
+                            navController.popBackStack()
+                        }
+                    )
+                },
                 enabled = sessionName.isNotEmpty() && addTasks != null,
                 modifier = Modifier.fillMaxWidth()
             ) {

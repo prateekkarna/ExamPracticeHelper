@@ -13,7 +13,9 @@ import androidx.navigation.compose.rememberNavController
 import com.example.exampractisehelper.navigation.AppRootNavigation
 import com.example.exampractisehelper.ui.screens.home.HomeScreen
 import com.example.exampractisehelper.ui.theme.ExamPractiseHelperTheme
+import dagger.hilt.android.AndroidEntryPoint
 
+@AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)

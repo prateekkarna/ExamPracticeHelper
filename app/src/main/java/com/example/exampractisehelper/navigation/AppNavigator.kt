@@ -20,7 +20,7 @@ fun AppNavigator(navController: NavHostController) {
         composable(Screen.Settings.route) { /* SettingsScreen(...) */ }
         composable(Screen.Profile.route) { /* ProfileScreen(...) */ }
         composable("create_session") {
-            CreateSessionScreen()
+            CreateSessionScreen(navController)
         }
         composable(
             "create_exam/{examId}",

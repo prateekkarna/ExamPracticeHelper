@@ -37,8 +37,11 @@ fun AppRootNavigation() {
                 val db = Room.databaseBuilder(
                     context,
                     PracticeDatabase::class.java,
-                    "practice_db"
-                ).build()
+                    "exam_practise_helper_db_v2"
+                )
+                .fallbackToDestructiveMigration()
+                .fallbackToDestructiveMigrationOnDowngrade()
+                .build()
                 val repository = ExamRepository(db.examDao(), db.examTypeDao())
                 val factory = CreateExamViewModelFactory(repository)
                 val viewModel: CreateExamViewModel = viewModel(factory = factory)
@@ -57,8 +60,11 @@ fun AppRootNavigation() {
                 val db = androidx.room.Room.databaseBuilder(
                     context,
                     com.example.exampractisehelper.data.database.PracticeDatabase::class.java,
-                    "practice_db"
-                ).build()
+                    "exam_practise_helper_db_v2"
+                )
+                .fallbackToDestructiveMigration()
+                .fallbackToDestructiveMigrationOnDowngrade()
+                .build()
                 val repository = com.example.exampractisehelper.data.repository.ExamRepository(db.examDao(), db.examTypeDao())
                 com.example.exampractisehelper.ui.screens.examdetail.ExamDetailScreen(
                     examId = examId,
@@ -80,15 +86,55 @@ fun AppRootNavigation() {
                 val db = androidx.room.Room.databaseBuilder(
                     context,
                     com.example.exampractisehelper.data.database.PracticeDatabase::class.java,
-                    "practice_db"
-                ).build()
+                    "exam_practise_helper_db_v2"
+                )
+                .fallbackToDestructiveMigration()
+                .fallbackToDestructiveMigrationOnDowngrade()
+                .build()
                 val repository = com.example.exampractisehelper.data.repository.ExamRepository(db.examDao(), db.examTypeDao())
                 val factory = CreateExamViewModelFactory(repository)
                 val viewModel: CreateExamViewModel = androidx.lifecycle.viewmodel.compose.viewModel(factory = factory)
                 CreateExamScreen(viewModel = viewModel, navController = navController, backStackEntry = backStackEntry)
             }
             composable("create_session") {
-                CreateSessionScreen()
+                CreateSessionScreen(navController)
+            }
+            composable(
+                route = "session_detail/{sessionId}",
+                arguments = listOf(
+                    navArgument("sessionId") { type = NavType.IntType }
+                )
+            ) { backStackEntry ->
+                val sessionId = backStackEntry.arguments?.getInt("sessionId") ?: 0
+                val context = androidx.compose.ui.platform.LocalContext.current
+                val db = androidx.room.Room.databaseBuilder(
+                    context,
+                    com.example.exampractisehelper.data.database.PracticeDatabase::class.java,
+                    "exam_practise_helper_db_v2"
+                )
+                .fallbackToDestructiveMigration()
+                .fallbackToDestructiveMigrationOnDowngrade()
+                .build()
+                val sessionRepository = com.example.exampractisehelper.data.repository.PracticeSessionRepositoryImpl(db.practiceSessionDao())
+                val taskDao = db.taskDao()
+                val subTaskDao = db.subTaskDao()
+                val (session, setSession) = androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf<com.example.exampractisehelper.data.entities.PracticeSession?>(null) }
+                val (tasks, setTasks) = androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf<List<com.example.exampractisehelper.data.entities.Task>>(emptyList()) }
+                val (subtasksMap, setSubtasksMap) = androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf<Map<Int, List<com.example.exampractisehelper.data.entities.Subtask>>>(emptyMap()) }
+                androidx.compose.runtime.LaunchedEffect(sessionId) {
+                    setSession(sessionRepository.getAllSessions().find { it.sessionId == sessionId })
+                    val loadedTasks = taskDao.getTasksForSession(sessionId)
+                    setTasks(loadedTasks)
+                    setSubtasksMap(loadedTasks.associate { it.taskId to subTaskDao.getSubtasksForTask(it.taskId) })
+                }
+                com.example.exampractisehelper.ui.screens.sessiondetail.SessionDetailScreen(
+                    session = session,
+                    tasks = tasks,
+                    subtasksMap = subtasksMap,
+                    onEdit = { /* TODO: Implement edit */ },
+                    onDelete = { /* TODO: Implement delete */ },
+                    onRun = { /* TODO: Implement run */ }
+                )
             }
         }
     }
