@@ -6,7 +6,10 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
 import androidx.navigation.NavType
-import com.example.exampractisehelper.ui.screens.home.CreateExamScreen
+import com.example.exampractisehelper.ui.screens.createSession.CreateSessionScreen
+import com.example.exampractisehelper.ui.screens.createexam.CreateExamScreen
+import com.example.exampractisehelper.ui.screens.createexam.CreateExamViewModel
+import com.example.exampractisehelper.ui.screens.createexam.CreateExamViewModelFactory
 
 @Composable
 fun AppNavigator(navController: NavHostController) {
@@ -16,6 +19,9 @@ fun AppNavigator(navController: NavHostController) {
         composable(Screen.Sessions.route) { /* SessionsScreen(...) */ }
         composable(Screen.Settings.route) { /* SettingsScreen(...) */ }
         composable(Screen.Profile.route) { /* ProfileScreen(...) */ }
+        composable("create_session") {
+            CreateSessionScreen(navController)
+        }
         composable(
             "create_exam/{examId}",
             arguments = listOf(
@@ -34,9 +40,9 @@ fun AppNavigator(navController: NavHostController) {
                 "practice_db"
             ).build()
             val repository = com.example.exampractisehelper.data.repository.ExamRepository(db.examDao(), db.examTypeDao())
-            val factory = com.example.exampractisehelper.ui.screens.home.CreateExamViewModelFactory(repository)
-            val viewModel: com.example.exampractisehelper.ui.screens.home.CreateExamViewModel = androidx.lifecycle.viewmodel.compose.viewModel(factory = factory)
-            com.example.exampractisehelper.ui.screens.home.CreateExamScreen(viewModel = viewModel, navController = navController, backStackEntry = backStackEntry)
+            val factory = CreateExamViewModelFactory(repository)
+            val viewModel: CreateExamViewModel = androidx.lifecycle.viewmodel.compose.viewModel(factory = factory)
+            CreateExamScreen(viewModel = viewModel, navController = navController, backStackEntry = backStackEntry)
         }
     }
 }

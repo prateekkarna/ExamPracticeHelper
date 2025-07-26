@@ -1,4 +1,4 @@
-package com.example.exampractisehelper.ui.screens.home
+package com.example.exampractisehelper.ui.screens.createexam
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
