@@ -21,6 +21,9 @@ fun AddSubtaskComponent(
     isAddEnabled: Boolean,
     buttonText: String = "Add Subtask"
 ) {
+    val isMinutesValid = subtaskMinutes.toIntOrNull() != null && subtaskMinutes.toInt() in 0..59
+    val isSecondsValid = subtaskSeconds.toIntOrNull() != null && subtaskSeconds.toInt() in 0..59
+
     Column {
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             OutlinedTextField(
@@ -49,7 +52,8 @@ fun AddSubtaskComponent(
                 onValueChange = onSubtaskMinutesChange,
                 label = { Text("MM") },
                 singleLine = true,
-                modifier = Modifier.weight(1f)
+                modifier = Modifier.weight(1f),
+                isError = !isMinutesValid
             )
             Spacer(Modifier.width(8.dp))
             OutlinedTextField(
@@ -57,7 +61,24 @@ fun AddSubtaskComponent(
                 onValueChange = onSubtaskSecondsChange,
                 label = { Text("SS") },
                 singleLine = true,
-                modifier = Modifier.weight(1f)
+                modifier = Modifier.weight(1f),
+                isError = !isSecondsValid
+            )
+        }
+        if (!isMinutesValid && subtaskMinutes.isNotBlank()) {
+            Text(
+                text = "Minutes must be between 0 and 59",
+                color = MaterialTheme.colorScheme.error,
+                style = MaterialTheme.typography.bodySmall,
+                modifier = Modifier.padding(start = 4.dp)
+            )
+        }
+        if (!isSecondsValid && subtaskSeconds.isNotBlank()) {
+            Text(
+                text = "Seconds must be between 0 and 59",
+                color = MaterialTheme.colorScheme.error,
+                style = MaterialTheme.typography.bodySmall,
+                modifier = Modifier.padding(start = 4.dp)
             )
         }
         Spacer(Modifier.height(8.dp))
@@ -65,7 +86,7 @@ fun AddSubtaskComponent(
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             Button(
                 onClick = onAddSubtask,
-                enabled = isAddEnabled
+                enabled = isAddEnabled && subtaskHours.isNotBlank() && subtaskMinutes.isNotBlank() && subtaskSeconds.isNotBlank() && isMinutesValid && isSecondsValid
             ) {
                 Text(buttonText)
             }

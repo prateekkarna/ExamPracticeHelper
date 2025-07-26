@@ -49,6 +49,10 @@ fun AddTaskComponent(
 ) {
     var isEditingSubtask by remember { mutableStateOf(false) }
 
+    // Validation for task timer fields
+    val isTaskMinutesValid = taskMinutes.toIntOrNull() != null && taskMinutes.toInt() in 0..59
+    val isTaskSecondsValid = taskSeconds.toIntOrNull() != null && taskSeconds.toInt() in 0..59
+
     Column {
         Row(
             Modifier.fillMaxWidth(),
@@ -97,7 +101,8 @@ fun AddTaskComponent(
                     onValueChange = onTaskMinutesChange,
                     label = { Text("MM") },
                     singleLine = true,
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.weight(1f),
+                    isError = !isTaskMinutesValid
                 )
                 Spacer(Modifier.width(8.dp))
                 OutlinedTextField(
@@ -105,7 +110,24 @@ fun AddTaskComponent(
                     onValueChange = onTaskSecondsChange,
                     label = { Text("SS") },
                     singleLine = true,
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.weight(1f),
+                    isError = !isTaskSecondsValid
+                )
+            }
+            if (!isTaskMinutesValid && taskMinutes.isNotBlank()) {
+                Text(
+                    text = "Minutes must be between 0 and 59",
+                    color = MaterialTheme.colorScheme.error,
+                    style = MaterialTheme.typography.bodySmall,
+                    modifier = Modifier.padding(start = 4.dp)
+                )
+            }
+            if (!isTaskSecondsValid && taskSeconds.isNotBlank()) {
+                Text(
+                    text = "Seconds must be between 0 and 59",
+                    color = MaterialTheme.colorScheme.error,
+                    style = MaterialTheme.typography.bodySmall,
+                    modifier = Modifier.padding(start = 4.dp)
                 )
             }
         } else if (askSubtask == true && onAddSubtask != null && onSubtaskNameChange != null && onSubtaskHoursChange != null && onSubtaskMinutesChange != null && onSubtaskSecondsChange != null) {
@@ -160,7 +182,9 @@ fun AddTaskComponent(
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
             Button(
                 onClick = onAddTask,
-                enabled = isAddEnabled
+                enabled = isAddEnabled && (askSubtask == false).let {
+                    if (it) taskHours.isNotBlank() && taskMinutes.isNotBlank() && taskSeconds.isNotBlank() && isTaskMinutesValid && isTaskSecondsValid else true
+                }
             ) {
                 Text(buttonText ?: "Add Task")
             }
