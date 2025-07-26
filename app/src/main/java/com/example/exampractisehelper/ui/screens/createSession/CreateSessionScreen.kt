@@ -87,47 +87,6 @@ fun CreateSessionScreen(
                             )
                         }
                         Spacer(Modifier.height(24.dp))
-                        Text("Session Duration" + if (addTasks == true) " (optional)" else "*")
-                        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                            OutlinedTextField(
-                                value = sessionHours,
-                                onValueChange = { sessionHours = it.filter { c -> c.isDigit() } },
-                                label = { Text("HH") },
-                                singleLine = true,
-                                modifier = Modifier.weight(1f),
-                                placeholder = null,
-                                isError = addTasks == false && sessionHours.isBlank() && sessionMinutes.isBlank() && sessionSeconds.isBlank()
-                            )
-                            Spacer(Modifier.width(8.dp))
-                            OutlinedTextField(
-                                value = sessionMinutes,
-                                onValueChange = { sessionMinutes = it.filter { c -> c.isDigit() } },
-                                label = { Text("MM") },
-                                singleLine = true,
-                                modifier = Modifier.weight(1f),
-                                placeholder = null,
-                                isError = addTasks == false && sessionHours.isBlank() && sessionMinutes.isBlank() && sessionSeconds.isBlank()
-                            )
-                            Spacer(Modifier.width(8.dp))
-                            OutlinedTextField(
-                                value = sessionSeconds,
-                                onValueChange = { sessionSeconds = it.filter { c -> c.isDigit() } },
-                                label = { Text("SS") },
-                                singleLine = true,
-                                modifier = Modifier.weight(1f),
-                                placeholder = null,
-                                isError = addTasks == false && sessionHours.isBlank() && sessionMinutes.isBlank() && sessionSeconds.isBlank()
-                            )
-                        }
-                        if (addTasks == false && sessionHours.isBlank() && sessionMinutes.isBlank() && sessionSeconds.isBlank()) {
-                            Text(
-                                text = "Session duration is required when no tasks are added",
-                                color = MaterialTheme.colorScheme.error,
-                                style = MaterialTheme.typography.bodySmall,
-                                modifier = Modifier.padding(top = 4.dp, start = 8.dp)
-                            )
-                        }
-                        Spacer(Modifier.height(24.dp))
                         Text("Do you want to add tasks to this session?", style = MaterialTheme.typography.titleMedium)
                         Row(
                             Modifier.padding(vertical = 8.dp),
@@ -143,6 +102,65 @@ fun CreateSessionScreen(
                                 onClick = { addTasks = false }
                             )
                             Text("No", Modifier.padding(start = 4.dp).align(Alignment.CenterVertically))
+                        }
+                        // Show timer only if "No" is selected
+                        if (addTasks == false) {
+                            Text("Session Duration*", style = MaterialTheme.typography.titleMedium)
+                            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                                OutlinedTextField(
+                                    value = sessionHours,
+                                    onValueChange = { sessionHours = it.filter { c -> c.isDigit() } },
+                                    label = { Text("HH") },
+                                    singleLine = true,
+                                    modifier = Modifier.weight(1f),
+                                    placeholder = null,
+                                    isError = sessionHours.isBlank() && sessionMinutes.isBlank() && sessionSeconds.isBlank()
+                                )
+                                Spacer(Modifier.width(8.dp))
+                                OutlinedTextField(
+                                    value = sessionMinutes,
+                                    onValueChange = { sessionMinutes = it.filter { c -> c.isDigit() } },
+                                    label = { Text("MM") },
+                                    singleLine = true,
+                                    modifier = Modifier.weight(1f),
+                                    placeholder = null,
+                                    isError = sessionMinutes.isNotBlank() && (sessionMinutes.toIntOrNull() ?: 0) !in 0..59
+                                )
+                                Spacer(Modifier.width(8.dp))
+                                OutlinedTextField(
+                                    value = sessionSeconds,
+                                    onValueChange = { sessionSeconds = it.filter { c -> c.isDigit() } },
+                                    label = { Text("SS") },
+                                    singleLine = true,
+                                    modifier = Modifier.weight(1f),
+                                    placeholder = null,
+                                    isError = sessionSeconds.isNotBlank() && (sessionSeconds.toIntOrNull() ?: 0) !in 0..59
+                                )
+                            }
+                            if (sessionHours.isBlank() && sessionMinutes.isBlank() && sessionSeconds.isBlank()) {
+                                Text(
+                                    text = "Session duration is required when no tasks are added",
+                                    color = MaterialTheme.colorScheme.error,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    modifier = Modifier.padding(top = 4.dp, start = 8.dp)
+                                )
+                            }
+                            if (sessionMinutes.isNotBlank() && (sessionMinutes.toIntOrNull() ?: 0) !in 0..59) {
+                                Text(
+                                    text = "Minutes must be between 0 and 59",
+                                    color = MaterialTheme.colorScheme.error,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    modifier = Modifier.padding(top = 4.dp, start = 8.dp)
+                                )
+                            }
+                            if (sessionSeconds.isNotBlank() && (sessionSeconds.toIntOrNull() ?: 0) !in 0..59) {
+                                Text(
+                                    text = "Seconds must be between 0 and 59",
+                                    color = MaterialTheme.colorScheme.error,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    modifier = Modifier.padding(top = 4.dp, start = 8.dp)
+                                )
+                            }
                         }
                     }
                 }
@@ -440,10 +458,70 @@ fun CreateSessionScreen(
                             }
                         }
                     }
+                    // Session Duration section below task section if "Yes" is selected
+                    Spacer(Modifier.height(24.dp))
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        elevation = CardDefaults.cardElevation(4.dp)
+                    ) {
+                        Column(modifier = Modifier.padding(16.dp)) {
+                            Text("Session Duration (optional)", style = MaterialTheme.typography.titleMedium)
+                            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                                OutlinedTextField(
+                                    value = sessionHours,
+                                    onValueChange = { sessionHours = it.filter { c -> c.isDigit() } },
+                                    label = { Text("HH") },
+                                    singleLine = true,
+                                    modifier = Modifier.weight(1f),
+                                    placeholder = null
+                                )
+                                Spacer(Modifier.width(8.dp))
+                                OutlinedTextField(
+                                    value = sessionMinutes,
+                                    onValueChange = { sessionMinutes = it.filter { c -> c.isDigit() } },
+                                    label = { Text("MM") },
+                                    singleLine = true,
+                                    modifier = Modifier.weight(1f),
+                                    placeholder = null,
+                                    isError = sessionMinutes.isNotBlank() && (sessionMinutes.toIntOrNull() ?: 0) !in 0..59
+                                )
+                                Spacer(Modifier.width(8.dp))
+                                OutlinedTextField(
+                                    value = sessionSeconds,
+                                    onValueChange = { sessionSeconds = it.filter { c -> c.isDigit() } },
+                                    label = { Text("SS") },
+                                    singleLine = true,
+                                    modifier = Modifier.weight(1f),
+                                    placeholder = null,
+                                    isError = sessionSeconds.isNotBlank() && (sessionSeconds.toIntOrNull() ?: 0) !in 0..59
+                                )
+                            }
+                            if (sessionMinutes.isNotBlank() && (sessionMinutes.toIntOrNull() ?: 0) !in 0..59) {
+                                Text(
+                                    text = "Minutes must be between 0 and 59",
+                                    color = MaterialTheme.colorScheme.error,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    modifier = Modifier.padding(top = 4.dp, start = 8.dp)
+                                )
+                            }
+                            if (sessionSeconds.isNotBlank() && (sessionSeconds.toIntOrNull() ?: 0) !in 0..59) {
+                                Text(
+                                    text = "Seconds must be between 0 and 59",
+                                    color = MaterialTheme.colorScheme.error,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    modifier = Modifier.padding(top = 4.dp, start = 8.dp)
+                                )
+                            }
+                        }
+                    }
                 }
             }
             item {
                 Spacer(Modifier.height(32.dp))
+                val isMinutesValid = sessionMinutes.isBlank() || (sessionMinutes.toIntOrNull() ?: 0) in 0..59
+                val isSecondsValid = sessionSeconds.isBlank() || (sessionSeconds.toIntOrNull() ?: 0) in 0..59
+                val isDurationValid = (addTasks == false && (sessionHours.isNotBlank() || sessionMinutes.isNotBlank() || sessionSeconds.isNotBlank())) || addTasks == true
+                val isFormValid = sessionName.isNotEmpty() && addTasks != null && isMinutesValid && isSecondsValid && isDurationValid
                 Button(
                     onClick = {
                         // Save session logic
@@ -459,7 +537,7 @@ fun CreateSessionScreen(
                         val session = com.example.exampractisehelper.data.entities.PracticeSession(
                             sessionId = 0,
                             name = sessionName,
-                            isTimed = addTasks == false,
+                            isTimed = totalDuration != null,
                             totalDuration = totalDuration
                         )
                         val tasksWithSubtasks = tasks.map { (taskName, subtasks) ->
@@ -489,7 +567,7 @@ fun CreateSessionScreen(
                             }
                         )
                     },
-                    enabled = sessionName.isNotEmpty() && addTasks != null && (addTasks == true || (sessionHours.isNotBlank() || sessionMinutes.isNotBlank() || sessionSeconds.isNotBlank())),
+                    enabled = isFormValid,
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Text("Create Session")
