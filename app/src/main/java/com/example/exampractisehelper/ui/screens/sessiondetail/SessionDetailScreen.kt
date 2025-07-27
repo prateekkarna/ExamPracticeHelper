@@ -6,6 +6,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.example.exampractisehelper.data.entities.PracticeSession
@@ -23,6 +24,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.sp
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -48,20 +51,29 @@ fun SessionDetailScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(session?.name ?: "Session Details") },
-                actions = {
-                    IconButton(onClick = onEdit) {
-                        Icon(Icons.Default.Edit, contentDescription = "Edit")
+                title = {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        IconButton(onClick = onEdit, modifier = Modifier.weight(1f)) {
+                            Icon(Icons.Default.Edit, contentDescription = "Edit", modifier = Modifier.size(24.dp))
+                        }
+                        Spacer(modifier = Modifier.weight(1f))
+                        IconButton(onClick = onRun, modifier = Modifier.weight(1f)) {
+                            Icon(Icons.Default.PlayArrow, contentDescription = "Run", modifier = Modifier.size(60.dp), tint = MaterialTheme.colorScheme.primary)
+                        }
+                        Spacer(modifier = Modifier.weight(1f))
+                        IconButton(onClick = { deleteRequested = true }, modifier = Modifier.weight(1f)) {
+                            Icon(Icons.Default.Delete, contentDescription = "Delete", modifier = Modifier.size(24.dp))
+                        }
                     }
-                    IconButton(onClick = { deleteRequested = true }) {
-                        Icon(Icons.Default.Delete, contentDescription = "Delete")
-                    }
-                    IconButton(onClick = onRun) {
-                        Icon(Icons.Default.PlayArrow, contentDescription = "Run")
-                    }
-                }
+                },
+                actions = {},
+                windowInsets = WindowInsets(0)
             )
-        }
+        },
+        contentWindowInsets = WindowInsets(0)
     ) { padding ->
         Column(
             modifier = Modifier
