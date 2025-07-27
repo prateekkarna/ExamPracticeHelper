@@ -26,6 +26,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.ui.platform.LocalContext
 import java.util.Locale
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.keepScreenOn
 
 @Composable
 fun RunSessionScreen(
@@ -138,11 +139,15 @@ fun RunSessionScreen(
     val sessionTimerColor = if (sessionTimer < 0) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
     val taskTimerColor = if (taskTimer < 0) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.secondary
 
+    // Determine if any timer is running
+    val anyTimerRunning = sessionRunning || taskRunning || subtaskRunning
+
     Column(
         modifier = Modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
-            .padding(horizontal = 24.dp),
+            .padding(horizontal = 24.dp)
+            .then(if (anyTimerRunning) Modifier.keepScreenOn() else Modifier),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         if (tasks.isNotEmpty()) {
