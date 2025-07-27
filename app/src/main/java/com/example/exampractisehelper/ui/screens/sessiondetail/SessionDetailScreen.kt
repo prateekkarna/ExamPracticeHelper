@@ -1,10 +1,9 @@
 package com.example.exampractisehelper.ui.screens.sessiondetail
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -22,6 +21,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.rememberScrollState
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -64,50 +65,104 @@ fun SessionDetailScreen(
     ) { padding ->
         Column(
             modifier = Modifier
+                .verticalScroll(rememberScrollState())
                 .padding(padding)
                 .padding(16.dp)
         ) {
             if (session == null) {
                 Text("Session not found.")
             } else {
-                Text("Name: ${session.name}")
-                Spacer(Modifier.height(8.dp))
-                val durationSecs = session.totalDuration ?: 0
-                if (durationSecs > 0) {
-                    val h = durationSecs / 3600
-                    val m = (durationSecs % 3600) / 60
-                    val s = durationSecs % 60
-                    Text("Duration: ${h}h ${m}m ${s}s")
+                // Session summary card
+                Card(
+                    modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
+                    elevation = CardDefaults.cardElevation(6.dp)
+                ) {
+                    Column(Modifier.padding(16.dp)) {
+                        // Remove extra space above session name
+                        Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+                            Icon(Icons.Default.PlayArrow, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                            Spacer(Modifier.width(8.dp))
+                            Text(session.name, style = MaterialTheme.typography.headlineSmall, modifier = Modifier.weight(1f))
+                            val durationSecs = session.totalDuration ?: 0
+                            val h = durationSecs / 3600
+                            val m = (durationSecs % 3600) / 60
+                            val s = durationSecs % 60
+                            Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+                                Icon(Icons.Default.Timer, contentDescription = "Session Duration", tint = MaterialTheme.colorScheme.primary)
+                                Spacer(Modifier.width(4.dp))
+                                Text(
+                                    text = if (durationSecs > 0) String.format("%dh %dm %ds", h, m, s) else "No timer",
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    modifier = Modifier.padding(start = 8.dp)
+                                )
+                            }
+                        }
+                        if (session.loopEnabled) {
+                            Spacer(Modifier.height(4.dp))
+                            Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+                                Icon(Icons.Default.Repeat, contentDescription = null, tint = MaterialTheme.colorScheme.tertiary)
+                                Spacer(Modifier.width(4.dp))
+                                Text("Loops: ${session.loopCount}", style = MaterialTheme.typography.bodyLarge)
+                            }
+                        }
+                        if (session.isSimpleSession == true) {
+                            Spacer(Modifier.height(4.dp))
+                            Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+                                Icon(Icons.Default.CheckCircle, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                                Spacer(Modifier.width(4.dp))
+                                Text("Simple Session", style = MaterialTheme.typography.bodyLarge)
+                            }
+                        }
+                    }
                 }
-                Spacer(Modifier.height(16.dp))
-                Text("Tasks:", style = MaterialTheme.typography.titleMedium)
+                // Tasks section
+                Text("Tasks", style = MaterialTheme.typography.titleMedium)
+                Spacer(Modifier.height(8.dp))
                 if (tasks.isEmpty()) {
-                    Text("No tasks found.")
+                    Text("No tasks found.", style = MaterialTheme.typography.bodyMedium)
                 } else {
                     tasks.forEach { task ->
-                        Card(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
-                            Column(modifier = Modifier.padding(8.dp)) {
-                                Text("Task: ${task.text}")
-                                val duration = task.taskDuration ?: 0
-                                if (duration > 0) {
-                                    val h = duration / 3600
-                                    val m = (duration % 3600) / 60
-                                    val s = duration % 60
-                                    Text("Task Duration: ${h}h ${m}m ${s}s")
+                        var subtasksExpanded by remember { mutableStateOf(false) }
+                        Card(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp), elevation = CardDefaults.cardElevation(2.dp)) {
+                            Column(modifier = Modifier.padding(12.dp)) {
+                                Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+                                    Icon(Icons.Default.EventNote, contentDescription = null, tint = MaterialTheme.colorScheme.secondary)
+                                    Spacer(Modifier.width(8.dp))
+                                    Text(task.text, style = MaterialTheme.typography.titleLarge, modifier = Modifier.weight(1f))
+                                    val duration = task.taskDuration ?: 0
+                                    val th = duration / 3600
+                                    val tm = (duration % 3600) / 60
+                                    val ts = duration % 60
+                                    Text(
+                                        text = if (duration > 0) String.format("%dh %dm %ds", th, tm, ts) else "No timer",
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        modifier = Modifier.padding(start = 8.dp)
+                                    )
                                 }
                                 if (task.hasSubtasks) {
                                     val subtasks = subtasksMap[task.taskId] ?: emptyList()
                                     if (subtasks.isNotEmpty()) {
-                                        Spacer(Modifier.height(4.dp))
-                                        Text("Subtasks:", style = MaterialTheme.typography.bodyMedium)
-                                        subtasks.forEach { subtask ->
-                                            val sh = subtask.duration / 3600
-                                            val sm = (subtask.duration % 3600) / 60
-                                            val ss = subtask.duration % 60
-                                            Text("- ${subtask.name} (${sh}h ${sm}m ${ss}s)")
+                                        Spacer(Modifier.height(8.dp))
+                                        Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().clickable { subtasksExpanded = !subtasksExpanded }) {
+                                            Text("Subtasks", style = MaterialTheme.typography.titleSmall, modifier = Modifier.weight(1f))
+                                            Icon(
+                                                imageVector = if (subtasksExpanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                                                contentDescription = if (subtasksExpanded) "Collapse" else "Expand"
+                                            )
                                         }
-                                    } else {
-                                        Text("No subtasks.")
+                                        if (subtasksExpanded) {
+                                            subtasks.forEach { subtask ->
+                                                val sh = (subtask.duration ?: 0) / 3600
+                                                val sm = ((subtask.duration ?: 0) % 3600) / 60
+                                                val ss = (subtask.duration ?: 0) % 60
+                                                Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+                                                    Icon(Icons.Default.Check, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                                                    Spacer(Modifier.width(4.dp))
+                                                    Text(subtask.name, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
+                                                    Text("${sh}h ${sm}m ${ss}s", style = MaterialTheme.typography.bodySmall)
+                                                }
+                                            }
+                                        }
                                     }
                                 }
                             }
