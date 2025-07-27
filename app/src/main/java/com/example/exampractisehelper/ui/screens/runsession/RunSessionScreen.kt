@@ -63,49 +63,51 @@ fun RunSessionScreen(
     // Add state for tooltip visibility
     var showSelectTaskTooltip by remember { mutableStateOf(false) }
 
-    // Session timer logic
-    LaunchedEffect(sessionRunning) {
-        while (sessionRunning) {
-            delay(1000)
-            if (sessionCountsDown) {
-                sessionTimer-- // allow negative values
-            } else {
-                sessionTimer++
-            }
-        }
-    }
-    // Task timer logic
-    LaunchedEffect(taskRunning) {
-        while (taskRunning) {
-            delay(1000)
-            if (currentTask?.taskDuration != null && currentTask.taskDuration > 0) {
-                taskTimer-- // allow negative values
-            } else {
-                taskTimer++
-            }
-            // If task timer is negative, stop subtask timer
-            if (taskTimer < 0) {
-                subtaskRunning = false
-            }
-        }
-    }
-    // Subtask timer logic
-    LaunchedEffect(subtaskRunning, currentSubtaskIndex, subtaskTimer) {
-        if (subtaskRunning) {
-            while (subtaskRunning && subtaskTimer > 0) {
-                delay(1000)
-                subtaskTimer--
-                // When subtask timer reaches 0, move to next subtask if available
-                if (subtaskTimer == 0 && currentSubtaskIndex != null) {
-                    val nextIndex = currentSubtaskIndex!! + 1
-                    if (nextIndex < subtasks.size) {
-                        currentSubtaskIndex = nextIndex
-                        subtaskTimer = subtasks[nextIndex].duration ?: 0
+    // Synchronized Session, Task, and Subtask timer logic
+    LaunchedEffect(sessionRunning, taskRunning, subtaskRunning, currentSubtaskIndex) {
+        var lastUpdate = System.currentTimeMillis()
+        while (sessionRunning || taskRunning) {
+            val now = System.currentTimeMillis()
+            val elapsed = ((now - lastUpdate) / 1000).toInt()
+
+            if (elapsed > 0) {
+                lastUpdate += elapsed * 1000 // increment by elapsed seconds
+                // Update session timer
+                if (sessionRunning) {
+                    if (sessionCountsDown) {
+                        sessionTimer -= elapsed
                     } else {
-                        subtaskRunning = false // No more subtasks
+                        sessionTimer += elapsed
+                    }
+                }
+                // Update task timer
+                if (taskRunning) {
+                    if (currentTask?.taskDuration != null && currentTask.taskDuration > 0) {
+                        taskTimer -= elapsed
+                    } else {
+                        taskTimer += elapsed
+                    }
+                    // If task timer is negative, stop subtask timer
+                    if (taskTimer < 0) {
+                        subtaskRunning = false
+                    }
+                    // Update subtask timer if running
+                    if (subtaskRunning && currentSubtaskIndex != null && subtasks.isNotEmpty()) {
+                        subtaskTimer -= elapsed
+                        if (subtaskTimer <= 0) {
+                            val nextIndex = currentSubtaskIndex!! + 1
+                            if (nextIndex < subtasks.size) {
+                                currentSubtaskIndex = nextIndex
+                                subtaskTimer = subtasks[nextIndex].duration ?: 0
+                                lastUpdate = System.currentTimeMillis() // reset for new subtask
+                            } else {
+                                subtaskRunning = false
+                            }
+                        }
                     }
                 }
             }
+            delay(100)
         }
     }
 
