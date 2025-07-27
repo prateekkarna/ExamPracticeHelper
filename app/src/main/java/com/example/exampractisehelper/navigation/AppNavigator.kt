@@ -44,5 +44,8 @@ fun AppNavigator(navController: NavHostController) {
             val viewModel: CreateExamViewModel = androidx.lifecycle.viewmodel.compose.viewModel(factory = factory)
             CreateExamScreen(viewModel = viewModel, navController = navController, backStackEntry = backStackEntry)
         }
+        composable("about") {
+            com.example.exampractisehelper.ui.screens.about.AboutScreen()
+        }
     }
 }

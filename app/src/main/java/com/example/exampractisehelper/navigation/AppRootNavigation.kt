@@ -23,7 +23,7 @@ fun AppRootNavigation() {
     val navController = rememberNavController()
     AppScaffold(
         navController = navController,
-        drawerItems = listOf("Home", "Exams", "Sessions", "Settings")
+        drawerItems = listOf("Home", "About")
     ) {
         NavHost(navController, startDestination = "home") {
             composable("home") {
@@ -177,6 +177,12 @@ fun AppRootNavigation() {
                         navController = navController
                     )
                 }
+            }
+            composable("profile") {
+                com.example.exampractisehelper.ui.screens.profile.ProfileScreen()
+            }
+            composable("about") {
+                com.example.exampractisehelper.ui.screens.about.AboutScreen()
             }
         }
     }
