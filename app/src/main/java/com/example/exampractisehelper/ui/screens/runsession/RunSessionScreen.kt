@@ -47,8 +47,26 @@ fun RunSessionScreen(
     // Track if timer should count up or down
     val sessionCountsDown = sessionDuration > 0
 
+    // Subtask timer (move these above LaunchedEffect)
+    var currentSubtaskIndex by remember { mutableStateOf<Int?>(null) }
+    var subtaskTimer by remember { mutableStateOf(0) }
+    var subtaskRunning by remember { mutableStateOf(false) }
+
     // Task timer
     var currentTaskIndex by remember { mutableStateOf<Int?>(null) }
+    // Reset subtask state when task changes
+    LaunchedEffect(currentTaskIndex) {
+        if (currentTaskIndex != null) {
+            val newSubtasks = tasks.getOrNull(currentTaskIndex!!)?.let { subtasksMap[it.taskId] } ?: emptyList()
+            currentSubtaskIndex = if (newSubtasks.isNotEmpty()) 0 else null
+            subtaskTimer = if (newSubtasks.isNotEmpty()) newSubtasks[0].duration ?: 0 else 0
+            subtaskRunning = newSubtasks.isNotEmpty() // Start subtask timer if there are subtasks
+        } else {
+            currentSubtaskIndex = null
+            subtaskTimer = 0
+            subtaskRunning = false
+        }
+    }
     val currentTask = currentTaskIndex?.let { tasks.getOrNull(it) }
     val taskName = currentTask?.text ?: "Select a Task"
     val taskDuration = currentTask?.taskDuration ?: 0
@@ -57,12 +75,9 @@ fun RunSessionScreen(
 
     // Subtask timer
     val subtasks = currentTask?.let { subtasksMap[it.taskId] } ?: emptyList()
-    var currentSubtaskIndex by remember { mutableStateOf<Int?>(null) }
     val currentSubtask = currentSubtaskIndex?.let { subtasks.getOrNull(it) }
     val nextSubtask = currentSubtaskIndex?.let { subtasks.getOrNull(it + 1) }
     val subtaskDuration = currentSubtask?.duration ?: 0
-    var subtaskTimer by remember { mutableStateOf(0) }
-    var subtaskRunning by remember { mutableStateOf(false) }
 
     // Add state for selected task
     var selectedTaskIndex by remember { mutableStateOf<Int?>(null) }
@@ -281,7 +296,7 @@ fun RunSessionScreen(
                                     sessionRunning = !sessionRunning
                                     taskRunning = !taskRunning
                                     if (subtasks.isNotEmpty()) {
-                                        subtaskRunning = !subtaskRunning
+                                        subtaskRunning = sessionRunning // Always start subtask timer when session starts
                                     }
                                 }
                             },
@@ -506,9 +521,11 @@ fun RunSessionScreen(
                                     currentTaskIndex = globalIndex
                                     // Reset timers for selected task
                                     taskTimer = task.taskDuration ?: 0
-                                    currentSubtaskIndex = if (subtasksMap[task.taskId]?.isNotEmpty() == true) 0 else null
-                                    subtaskTimer = subtasksMap[task.taskId]?.getOrNull(0)?.duration ?: 0
-                                    // sessionTimer should NOT reset here
+                                    val subList = subtasksMap[task.taskId]
+                                    currentSubtaskIndex = if (subList?.isNotEmpty() == true) 0 else null
+                                    subtaskTimer = subList?.getOrNull(0)?.duration ?: 0
+                                    subtaskRunning = false // Do not start timers automatically
+                                    // sessionRunning and taskRunning should NOT start here
                                 },
                             elevation = CardDefaults.cardElevation(2.dp)
                         ) {
