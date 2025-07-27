@@ -6,6 +6,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.example.exampractisehelper.data.entities.PracticeSession
@@ -23,6 +24,7 @@ import com.example.exampractisehelper.ui.theme.ExamPractiseHelperTheme
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.ui.platform.LocalContext
 import java.util.Locale
+import androidx.compose.ui.text.font.FontWeight
 
 @Composable
 fun RunSessionScreen(
@@ -74,6 +76,29 @@ fun RunSessionScreen(
         }
     }
 
+    // Timer font sizes
+    val smallestTimerSize = MaterialTheme.typography.displaySmall.fontSize
+    val mediumTimerSize = MaterialTheme.typography.displayMedium.fontSize * 1.5f
+    val largestTimerSize = MaterialTheme.typography.displayLarge.fontSize * 1.3f
+
+    // Determine which timers are visible
+    val showSubtaskTimer = subtasks.isNotEmpty()
+    val showTaskTimer = tasks.isNotEmpty()
+    val showSessionTimer = true
+
+    // Assign font sizes based on preference
+    val sessionTimerFontSize = when {
+        showSubtaskTimer && showTaskTimer -> smallestTimerSize
+        showTaskTimer -> mediumTimerSize
+        else -> largestTimerSize
+    }
+    val taskTimerFontSize = when {
+        showSubtaskTimer -> mediumTimerSize
+        showTaskTimer -> largestTimerSize
+        else -> mediumTimerSize
+    }
+    val subtaskTimerFontSize = if (showSubtaskTimer) largestTimerSize else mediumTimerSize
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -81,32 +106,8 @@ fun RunSessionScreen(
             .padding(horizontal = 24.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Card(
-            modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
-            elevation = CardDefaults.cardElevation(4.dp)
-        ) {
-            Column(
-                Modifier.fillMaxWidth().padding(16.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Text("Session: ${session?.name ?: "Session"}", style = MaterialTheme.typography.headlineMedium)
-                Spacer(Modifier.height(8.dp))
-                // Fancy timer for session (always visible)
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 8.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = String.format(Locale.getDefault(), "%02d:%02d:%02d", sessionTimer / 3600, (sessionTimer % 3600) / 60, sessionTimer % 60),
-                        style = MaterialTheme.typography.displayMedium.copy(fontSize = MaterialTheme.typography.displayLarge.fontSize * 1.25, color = MaterialTheme.colorScheme.primary)
-                    )
-                }
-            }
-        }
-        // Only show the task timer card if there is at least one task
         if (tasks.isNotEmpty()) {
+            // Show main session timer card
             Card(
                 modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
                 elevation = CardDefaults.cardElevation(4.dp)
@@ -115,8 +116,85 @@ fun RunSessionScreen(
                     Modifier.fillMaxWidth().padding(16.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Text("Current Task: ${currentTask?.text ?: "Done"}", style = MaterialTheme.typography.titleLarge)
-                    Spacer(Modifier.height(8.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        IconButton(
+                            onClick = {
+                                sessionRunning = !sessionRunning
+                                taskRunning = !taskRunning
+                                if (subtasks.isNotEmpty()) {
+                                    subtaskRunning = !subtaskRunning
+                                }
+                            },
+                            modifier = Modifier.size(56.dp)
+                        ) {
+                            if (sessionRunning) {
+                                Icon(
+                                    imageVector = Icons.Filled.Pause,
+                                    contentDescription = "Pause",
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.size(80.dp)
+                                )
+                            } else {
+                                Icon(
+                                    imageVector = Icons.Filled.PlayArrow,
+                                    contentDescription = "Play",
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.size(80.dp)
+                                )
+                            }
+                        }
+                        Spacer(Modifier.weight(1f))
+                        Text("Session Timer", style = MaterialTheme.typography.headlineMedium)
+                        Spacer(Modifier.weight(1f))
+                        IconButton(
+                            onClick = {
+                                sessionRunning = false
+                                taskRunning = false
+                                subtaskRunning = false
+                                sessionTimer = sessionDuration
+                                taskTimer = taskDuration
+                                subtaskTimer = subtaskDuration
+                            },
+                            modifier = Modifier.size(56.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Filled.Stop,
+                                contentDescription = "Stop",
+                                tint = MaterialTheme.colorScheme.error,
+                                modifier = Modifier.size(80.dp)
+                            )
+                        }
+                    }
+                    Spacer(Modifier.height(2.dp))
+                    // Session timer
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 2.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = String.format(Locale.getDefault(), "%02d:%02d:%02d", sessionTimer / 3600, (sessionTimer % 3600) / 60, sessionTimer % 60),
+                            style = MaterialTheme.typography.displayMedium.copy(fontSize = sessionTimerFontSize, color = MaterialTheme.colorScheme.primary)
+                        )
+                    }
+                    Spacer(Modifier.height(4.dp))
+                }
+            }
+            // Task timer card
+            Card(
+                modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+                elevation = CardDefaults.cardElevation(4.dp)
+            ) {
+                Column(
+                    Modifier.fillMaxWidth().padding(16.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text("Current Task: ${currentTask?.text ?: "Done"}", style = MaterialTheme.typography.titleLarge, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.fillMaxWidth())
+                    Spacer(Modifier.height(4.dp))
                     // Fancy timer for task (smaller than session timer)
                     Box(
                         modifier = Modifier
@@ -126,25 +204,45 @@ fun RunSessionScreen(
                     ) {
                         Text(
                             text = String.format(Locale.getDefault(), "%02d:%02d:%02d", taskTimer / 3600, (taskTimer % 3600) / 60, taskTimer % 60),
-                            style = MaterialTheme.typography.displaySmall.copy(fontSize = MaterialTheme.typography.displayLarge.fontSize, color = MaterialTheme.colorScheme.secondary)
+                            style = MaterialTheme.typography.displaySmall.copy(fontSize = taskTimerFontSize, color = MaterialTheme.colorScheme.secondary)
                         )
                     }
-                    Spacer(Modifier.height(12.dp))
+                    Spacer(Modifier.height(4.dp))
                     if (subtasks.isNotEmpty()) {
                         Row(
                             Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
-                            Column(Modifier.weight(1f), horizontalAlignment = Alignment.Start) {
-                                Text("Current Subtask", style = MaterialTheme.typography.bodyMedium)
-                                Text(currentSubtask?.name ?: "-", style = MaterialTheme.typography.bodyLarge)
+                            Column(Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
+                                Text(
+                                    "Current Subtask",
+                                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
+                                )
+                                Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                                    Text(
+                                        currentSubtask?.name ?: "-",
+                                        style = MaterialTheme.typography.titleLarge,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis
+                                    )
+                                }
                             }
-                            Column(Modifier.weight(1f), horizontalAlignment = Alignment.End) {
-                                Text("Next Subtask", style = MaterialTheme.typography.bodyMedium)
-                                Text(nextSubtask?.name ?: "-", style = MaterialTheme.typography.bodyLarge)
+                            Column(Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
+                                Text(
+                                    "Next Subtask",
+                                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
+                                )
+                                Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                                    Text(
+                                        nextSubtask?.name ?: "-",
+                                        style = MaterialTheme.typography.titleLarge,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis
+                                    )
+                                }
                             }
                         }
-                        Spacer(Modifier.height(8.dp))
+                        Spacer(Modifier.height(4.dp))
                         // Show current running subtask timer below the row, slightly less than before but still prominent
                         Box(
                             modifier = Modifier.fillMaxWidth(),
@@ -152,7 +250,7 @@ fun RunSessionScreen(
                         ) {
                             Text(
                                 text = String.format(Locale.getDefault(), "%02d:%02d:%02d", subtaskTimer / 3600, (subtaskTimer % 3600) / 60, subtaskTimer % 60),
-                                style = MaterialTheme.typography.headlineLarge.copy(fontSize = MaterialTheme.typography.displayLarge.fontSize * 0.7, color = MaterialTheme.colorScheme.primary)
+                                style = MaterialTheme.typography.displayLarge.copy(fontSize = subtaskTimerFontSize, color = MaterialTheme.colorScheme.primary)
                             )
                         }
                     }
@@ -174,99 +272,100 @@ fun RunSessionScreen(
                                 .padding(4.dp),
                             elevation = CardDefaults.cardElevation(2.dp)
                         ) {
-                            Row(
+                            Column(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .padding(12.dp),
-                                verticalAlignment = Alignment.CenterVertically
+                                horizontalAlignment = Alignment.CenterHorizontally
                             ) {
-                                // Left part: Task name (80% width)
-                                Box(
-                                    modifier = Modifier.weight(0.8f),
-                                    contentAlignment = Alignment.CenterStart
-                                ) {
-                                    Text(
-                                        task.text,
-                                        style = MaterialTheme.typography.titleLarge.copy(color = MaterialTheme.colorScheme.primary),
-                                        maxLines = 2,
-                                        overflow = TextOverflow.Ellipsis
-                                    )
-                                }
-                                // Right part: Duration (vertical, 20% width, no label)
-                                Box(
-                                    modifier = Modifier.weight(0.2f),
-                                    contentAlignment = Alignment.CenterEnd
-                                ) {
-                                    val h = (task.taskDuration ?: 0) / 3600
-                                    val m = ((task.taskDuration ?: 0) % 3600) / 60
-                                    val s = (task.taskDuration ?: 0) % 60
-                                    Column(
-                                        horizontalAlignment = Alignment.End
-                                    ) {
-                                        Text("%dh".format(h), style = MaterialTheme.typography.bodyMedium)
-                                        Text("%dm".format(m), style = MaterialTheme.typography.bodyMedium)
-                                        Text("%ds".format(s), style = MaterialTheme.typography.bodyMedium)
-                                    }
-                                }
+                                Text(
+                                    task.text,
+                                    style = MaterialTheme.typography.titleLarge.copy(color = MaterialTheme.colorScheme.primary),
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                    modifier = Modifier.fillMaxWidth(),
+                                    textAlign = TextAlign.Center
+                                )
+                                val h = (task.taskDuration ?: 0) / 3600
+                                val m = ((task.taskDuration ?: 0) % 3600) / 60
+                                val s = (task.taskDuration ?: 0) % 60
+                                Text(
+                                    text = String.format("%dh %dm %ds", h, m, s),
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.secondary
+                                )
                             }
                         }
                     }
                 }
             }
-        }
-        // Play/Stop controls at the bottom
-        Spacer(Modifier.height(24.dp))
-        Row(
-            Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.Center
-        ) {
-            // Play/Pause button
-            IconButton(
-                onClick = {
-                    sessionRunning = !sessionRunning
-                    taskRunning = !taskRunning
-                    if (subtasks.isNotEmpty()) {
-                        subtaskRunning = !subtaskRunning
+        } else {
+            // Only session timer, show big timer and play/stop below
+            Card(
+                modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+                elevation = CardDefaults.cardElevation(4.dp)
+            ) {
+                Column(
+                    Modifier.fillMaxWidth().padding(16.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text("Session Timer", style = MaterialTheme.typography.headlineMedium)
+                    Spacer(Modifier.height(8.dp))
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 8.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = String.format(Locale.getDefault(), "%02d:%02d:%02d", sessionTimer / 3600, (sessionTimer % 3600) / 60, sessionTimer % 60),
+                            style = MaterialTheme.typography.displayLarge.copy(fontSize = largestTimerSize, color = MaterialTheme.colorScheme.primary)
+                        )
                     }
-                },
-                modifier = Modifier.size(64.dp)
-            ) {
-                if (sessionRunning) {
-                    Icon(
-                        imageVector = Icons.Filled.Pause,
-                        contentDescription = "Pause",
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(48.dp)
-                    )
-                } else {
-                    Icon(
-                        imageVector = Icons.Filled.PlayArrow,
-                        contentDescription = "Play",
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(48.dp)
-                    )
+                    Spacer(Modifier.height(16.dp))
+                    Row(
+                        Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.Center
+                    ) {
+                        IconButton(
+                            onClick = {
+                                sessionRunning = !sessionRunning
+                            },
+                            modifier = Modifier.size(72.dp)
+                        ) {
+                            if (sessionRunning) {
+                                Icon(
+                                    imageVector = Icons.Filled.Pause,
+                                    contentDescription = "Pause",
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.size(56.dp)
+                                )
+                            } else {
+                                Icon(
+                                    imageVector = Icons.Filled.PlayArrow,
+                                    contentDescription = "Play",
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.size(56.dp)
+                                )
+                            }
+                        }
+                        Spacer(Modifier.width(32.dp))
+                        IconButton(
+                            onClick = {
+                                sessionRunning = false
+                                sessionTimer = sessionDuration
+                            },
+                            modifier = Modifier.size(72.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Filled.Stop,
+                                contentDescription = "Stop",
+                                tint = MaterialTheme.colorScheme.error,
+                                modifier = Modifier.size(56.dp)
+                            )
+                        }
+                    }
                 }
-            }
-            Spacer(Modifier.width(32.dp))
-            // Stop button
-            IconButton(
-                onClick = {
-                    sessionRunning = false
-                    taskRunning = false
-                    subtaskRunning = false
-                    // Optionally reset timers to initial values
-                    sessionTimer = sessionDuration
-                    taskTimer = taskDuration
-                    subtaskTimer = subtaskDuration
-                },
-                modifier = Modifier.size(64.dp)
-            ) {
-                Icon(
-                    imageVector = Icons.Filled.Stop,
-                    contentDescription = "Stop",
-                    tint = MaterialTheme.colorScheme.error,
-                    modifier = Modifier.size(48.dp)
-                )
             }
         }
     }
