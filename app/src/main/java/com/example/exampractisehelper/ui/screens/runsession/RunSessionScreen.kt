@@ -64,6 +64,30 @@ fun RunSessionScreen(
     // Add state for tooltip visibility
     var showSelectTaskTooltip by remember { mutableStateOf(false) }
 
+    // Vibration logic
+    val context = LocalContext.current
+    val vibrator = remember {
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
+            context.getSystemService(android.os.VibratorManager::class.java)?.defaultVibrator
+        } else {
+            @Suppress("DEPRECATION")
+            context.getSystemService(android.content.Context.VIBRATOR_SERVICE) as android.os.Vibrator
+        }
+    }
+    var sessionPrevTimer by remember { mutableStateOf(sessionTimer) }
+    var taskPrevTimer by remember { mutableStateOf(taskTimer) }
+    var subtaskPrevTimer by remember { mutableStateOf(subtaskTimer) }
+
+    // Audio logic
+    val mediaPlayer = remember { mutableStateOf<android.media.MediaPlayer?>(null) }
+    fun playAlarm() {
+        mediaPlayer.value?.release()
+        val mp = android.media.MediaPlayer.create(context, com.example.exampractisehelper.R.raw.alarm)
+        mp?.setOnCompletionListener { it.release() }
+        mp?.start()
+        mediaPlayer.value = mp
+    }
+
     // Synchronized Session, Task, and Subtask timer logic
     LaunchedEffect(sessionRunning, taskRunning, subtaskRunning, currentSubtaskIndex) {
         var lastUpdate = System.currentTimeMillis()
@@ -81,6 +105,19 @@ fun RunSessionScreen(
                         sessionTimer += elapsed
                     }
                 }
+                // Vibrate and play audio for session timer
+                if (sessionPrevTimer > 5 && sessionTimer <= 5 && sessionTimer > 0) {
+                    vibrator?.let {
+                        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+                            it.vibrate(android.os.VibrationEffect.createOneShot(5000, android.os.VibrationEffect.DEFAULT_AMPLITUDE))
+                        } else {
+                            @Suppress("DEPRECATION")
+                            it.vibrate(5000)
+                        }
+                    }
+                    playAlarm()
+                }
+                sessionPrevTimer = sessionTimer
                 // Update task timer
                 if (taskRunning) {
                     if (currentTask?.taskDuration != null && currentTask.taskDuration > 0) {
@@ -88,6 +125,19 @@ fun RunSessionScreen(
                     } else {
                         taskTimer += elapsed
                     }
+                    // Vibrate and play audio for task timer
+                    if (taskPrevTimer > 5 && taskTimer <= 5 && taskTimer > 0) {
+                        vibrator?.let {
+                            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+                                it.vibrate(android.os.VibrationEffect.createOneShot(5000, android.os.VibrationEffect.DEFAULT_AMPLITUDE))
+                            } else {
+                                @Suppress("DEPRECATION")
+                                it.vibrate(5000)
+                            }
+                        }
+                        playAlarm()
+                    }
+                    taskPrevTimer = taskTimer
                     // If task timer is negative, stop subtask timer
                     if (taskTimer < 0) {
                         subtaskRunning = false
@@ -95,6 +145,19 @@ fun RunSessionScreen(
                     // Update subtask timer if running
                     if (subtaskRunning && currentSubtaskIndex != null && subtasks.isNotEmpty()) {
                         subtaskTimer -= elapsed
+                        // Vibrate and play audio for subtask timer
+                        if (subtaskPrevTimer > 5 && subtaskTimer <= 5 && subtaskTimer > 0) {
+                            vibrator?.let {
+                                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+                                    it.vibrate(android.os.VibrationEffect.createOneShot(5000, android.os.VibrationEffect.DEFAULT_AMPLITUDE))
+                                } else {
+                                    @Suppress("DEPRECATION")
+                                    it.vibrate(5000)
+                                }
+                            }
+                            playAlarm()
+                        }
+                        subtaskPrevTimer = subtaskTimer
                         if (subtaskTimer <= 0) {
                             val nextIndex = currentSubtaskIndex!! + 1
                             if (nextIndex < subtasks.size) {
