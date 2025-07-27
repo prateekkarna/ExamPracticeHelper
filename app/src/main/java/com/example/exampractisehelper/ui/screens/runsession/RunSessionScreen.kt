@@ -1,11 +1,14 @@
 package com.example.exampractisehelper.ui.screens.runsession
 
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -26,6 +29,9 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.ui.platform.LocalContext
 import java.util.Locale
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.keepScreenOn
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.launch
 
 @Composable
 fun RunSessionScreen(
@@ -63,6 +69,39 @@ fun RunSessionScreen(
     // Add state for tooltip visibility
     var showSelectTaskTooltip by remember { mutableStateOf(false) }
 
+    // Vibration logic
+    val context = LocalContext.current
+    val vibrator = remember {
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
+            context.getSystemService(android.os.VibratorManager::class.java)?.defaultVibrator
+        } else {
+            @Suppress("DEPRECATION")
+            context.getSystemService(android.content.Context.VIBRATOR_SERVICE) as android.os.Vibrator
+        }
+    }
+    var sessionPrevTimer by remember { mutableStateOf(sessionTimer) }
+    var taskPrevTimer by remember { mutableStateOf(taskTimer) }
+    var subtaskPrevTimer by remember { mutableStateOf(subtaskTimer) }
+
+    // Audio logic
+    val mediaPlayer = remember { mutableStateOf<android.media.MediaPlayer?>(null) }
+    fun playAlarm() {
+        mediaPlayer.value?.release()
+        val mp = android.media.MediaPlayer.create(context, com.example.exampractisehelper.R.raw.alarm)
+        mp?.setOnCompletionListener { it.release() }
+        mp?.start()
+        mediaPlayer.value = mp
+    }
+
+    // Shake animation states for timer text
+    val sessionTimerShake = remember { Animatable(0f) }
+    val taskTimerShake = remember { Animatable(0f) }
+    val subtaskTimerShake = remember { Animatable(0f) }
+    var sessionShakeActive by remember { mutableStateOf(false) }
+    var taskShakeActive by remember { mutableStateOf(false) }
+    var subtaskShakeActive by remember { mutableStateOf(false) }
+    val coroutineScope = rememberCoroutineScope()
+
     // Synchronized Session, Task, and Subtask timer logic
     LaunchedEffect(sessionRunning, taskRunning, subtaskRunning, currentSubtaskIndex) {
         var lastUpdate = System.currentTimeMillis()
@@ -80,6 +119,30 @@ fun RunSessionScreen(
                         sessionTimer += elapsed
                     }
                 }
+                // Vibrate and play audio for session timer
+                if (sessionPrevTimer > 5 && sessionTimer <= 5 && sessionTimer > 0) {
+                    vibrator?.let {
+                        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+                            it.vibrate(android.os.VibrationEffect.createOneShot(5000, android.os.VibrationEffect.DEFAULT_AMPLITUDE))
+                        } else {
+                            @Suppress("DEPRECATION")
+                            it.vibrate(5000)
+                        }
+                    }
+                    playAlarm()
+                    sessionShakeActive = true
+                    coroutineScope.launch {
+                        val shakeDuration = 5000 // ms
+                        val shakeStep = 50 // ms
+                        val shakeTimes = shakeDuration / shakeStep
+                        repeat(shakeTimes) {
+                            sessionTimerShake.snapTo(20f)
+                            sessionTimerShake.animateTo(0f, animationSpec = tween(shakeStep))
+                        }
+                        sessionShakeActive = false
+                    }
+                }
+                sessionPrevTimer = sessionTimer
                 // Update task timer
                 if (taskRunning) {
                     if (currentTask?.taskDuration != null && currentTask.taskDuration > 0) {
@@ -87,22 +150,66 @@ fun RunSessionScreen(
                     } else {
                         taskTimer += elapsed
                     }
-                    // If task timer is negative, stop subtask timer
-                    if (taskTimer < 0) {
-                        subtaskRunning = false
-                    }
-                    // Update subtask timer if running
-                    if (subtaskRunning && currentSubtaskIndex != null && subtasks.isNotEmpty()) {
-                        subtaskTimer -= elapsed
-                        if (subtaskTimer <= 0) {
-                            val nextIndex = currentSubtaskIndex!! + 1
-                            if (nextIndex < subtasks.size) {
-                                currentSubtaskIndex = nextIndex
-                                subtaskTimer = subtasks[nextIndex].duration ?: 0
-                                lastUpdate = System.currentTimeMillis() // reset for new subtask
+                    // Vibrate and play audio for task timer
+                    if (taskPrevTimer > 5 && taskTimer <= 5 && taskTimer > 0) {
+                        vibrator?.let {
+                            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+                                it.vibrate(android.os.VibrationEffect.createOneShot(5000, android.os.VibrationEffect.DEFAULT_AMPLITUDE))
                             } else {
-                                subtaskRunning = false
+                                @Suppress("DEPRECATION")
+                                it.vibrate(5000)
                             }
+                        }
+                        playAlarm()
+                        taskShakeActive = true
+                        coroutineScope.launch {
+                            val shakeDuration = 5000 // ms
+                            val shakeStep = 50 // ms
+                            val shakeTimes = shakeDuration / shakeStep
+                            repeat(shakeTimes) {
+                                taskTimerShake.snapTo(20f)
+                                taskTimerShake.animateTo(0f, animationSpec = tween(shakeStep))
+                            }
+                            taskShakeActive = false
+                        }
+                    }
+                    taskPrevTimer = taskTimer
+                }
+                // Update subtask timer if running
+                if (subtaskRunning && currentSubtaskIndex != null && subtasks.isNotEmpty()) {
+                    subtaskTimer -= elapsed
+                    // Vibrate and play audio for subtask timer
+                    if (subtaskPrevTimer > 5 && subtaskTimer <= 5 && subtaskTimer > 0) {
+                        vibrator?.let {
+                            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+                                it.vibrate(android.os.VibrationEffect.createOneShot(5000, android.os.VibrationEffect.DEFAULT_AMPLITUDE))
+                            } else {
+                                @Suppress("DEPRECATION")
+                                it.vibrate(5000)
+                            }
+                        }
+                        playAlarm()
+                        subtaskShakeActive = true
+                        coroutineScope.launch {
+                            val shakeDuration = 5000 // ms
+                            val shakeStep = 50 // ms
+                            val shakeTimes = shakeDuration / shakeStep
+                            repeat(shakeTimes) {
+                                subtaskTimerShake.snapTo(20f)
+                                subtaskTimerShake.animateTo(0f, animationSpec = tween(shakeStep))
+                            }
+                            subtaskShakeActive = false
+                        }
+                    }
+                    subtaskPrevTimer = subtaskTimer
+                    if (subtaskTimer <= 0) {
+                        val nextIndex = currentSubtaskIndex!! + 1
+                        if (nextIndex < subtasks.size) {
+                            currentSubtaskIndex = nextIndex
+                            subtaskTimer = subtasks[nextIndex].duration ?: 0
+                            lastUpdate = System.currentTimeMillis() // reset for new subtask
+                        } else {
+                            subtaskRunning = false
                         }
                     }
                 }
@@ -138,17 +245,24 @@ fun RunSessionScreen(
     val sessionTimerColor = if (sessionTimer < 0) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
     val taskTimerColor = if (taskTimer < 0) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.secondary
 
+    // Determine if any timer is running
+    val anyTimerRunning = sessionRunning || taskRunning || subtaskRunning
+
     Column(
         modifier = Modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
-            .padding(horizontal = 24.dp),
+            .padding(horizontal = 24.dp)
+            .then(if (anyTimerRunning) Modifier.keepScreenOn() else Modifier),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         if (tasks.isNotEmpty()) {
             // Show main session timer card
             Card(
-                modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 8.dp)
+                ,
                 elevation = CardDefaults.cardElevation(4.dp)
             ) {
                 Column(
@@ -205,6 +319,29 @@ fun RunSessionScreen(
                                 currentSubtaskIndex = null
                                 subtaskTimer = 0
                                 selectedTaskIndex = null
+                                // Stop all animation, audio, and vibration
+                                sessionShakeActive = false
+                                taskShakeActive = false
+                                subtaskShakeActive = false
+                                // Launch coroutine to snap animations
+                                coroutineScope.launch {
+                                    sessionTimerShake.snapTo(0f)
+                                    taskTimerShake.snapTo(0f)
+                                    subtaskTimerShake.snapTo(0f)
+                                }
+                                mediaPlayer.value?.let { mp ->
+                                    try {
+                                        if (mp.isPlaying) {
+                                            mp.stop()
+                                        }
+                                    } catch (e: IllegalStateException) {
+                                        // Ignore, safe to release
+                                    } finally {
+                                        mp.release()
+                                    }
+                                }
+                                mediaPlayer.value = null
+                                vibrator?.cancel()
                             },
                             modifier = Modifier.size(56.dp),
                             enabled = currentTaskIndex != null
@@ -231,7 +368,8 @@ fun RunSessionScreen(
                                 kotlin.math.abs(sessionTimer) / 3600,
                                 (kotlin.math.abs(sessionTimer) % 3600) / 60,
                                 kotlin.math.abs(sessionTimer) % 60),
-                            style = MaterialTheme.typography.displayMedium.copy(fontSize = sessionTimerFontSize, color = sessionTimerColor)
+                            style = MaterialTheme.typography.displayMedium.copy(fontSize = sessionTimerFontSize, color = sessionTimerColor),
+                            modifier = if (sessionShakeActive) Modifier.graphicsLayer { translationX = sessionTimerShake.value * kotlin.math.sin(System.currentTimeMillis().toDouble() / 20).toFloat() } else Modifier
                         )
                     }
                     Spacer(Modifier.height(4.dp))
@@ -239,7 +377,10 @@ fun RunSessionScreen(
             }
             // Only show the task timer card if there is at least one task
             Card(
-                modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 8.dp)
+                ,
                 elevation = CardDefaults.cardElevation(4.dp)
             ) {
                 Column(
@@ -279,7 +420,8 @@ fun RunSessionScreen(
                                 kotlin.math.abs(taskTimer) / 3600,
                                 (kotlin.math.abs(taskTimer) % 3600) / 60,
                                 kotlin.math.abs(taskTimer) % 60),
-                            style = MaterialTheme.typography.displaySmall.copy(fontSize = taskTimerFontSize, color = taskTimerColor)
+                            style = MaterialTheme.typography.displaySmall.copy(fontSize = taskTimerFontSize, color = taskTimerColor),
+                            modifier = if (taskShakeActive) Modifier.graphicsLayer { translationX = taskTimerShake.value * kotlin.math.sin(System.currentTimeMillis().toDouble() / 20).toFloat() } else Modifier
                         )
                     }
                     Spacer(Modifier.height(4.dp))
@@ -325,7 +467,8 @@ fun RunSessionScreen(
                         ) {
                             Text(
                                 text = String.format(Locale.getDefault(), "%02d:%02d:%02d", subtaskTimer / 3600, (subtaskTimer % 3600) / 60, subtaskTimer % 60),
-                                style = MaterialTheme.typography.displayLarge.copy(fontSize = subtaskTimerFontSize, color = MaterialTheme.colorScheme.primary)
+                                style = MaterialTheme.typography.displayLarge.copy(fontSize = subtaskTimerFontSize, color = MaterialTheme.colorScheme.primary),
+                                modifier = if (subtaskShakeActive) Modifier.graphicsLayer { translationX = subtaskTimerShake.value * kotlin.math.sin(System.currentTimeMillis().toDouble() / 20).toFloat() } else Modifier
                             )
                         }
                     }
@@ -420,7 +563,11 @@ fun RunSessionScreen(
                                 kotlin.math.abs(sessionTimer) / 3600,
                                 (kotlin.math.abs(sessionTimer) % 3600) / 60,
                                 kotlin.math.abs(sessionTimer) % 60),
-                            style = MaterialTheme.typography.displayLarge.copy(fontSize = largestTimerSize, color = MaterialTheme.colorScheme.primary)
+                            style = MaterialTheme.typography.displayLarge.copy(
+                                fontSize = largestTimerSize,
+                                color = if (sessionTimer < 0) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
+                            ),
+                            modifier = if (sessionShakeActive) Modifier.graphicsLayer { translationX = sessionTimerShake.value * kotlin.math.sin(System.currentTimeMillis().toDouble() / 20).toFloat() } else Modifier
                         )
                     }
                     Spacer(Modifier.height(16.dp))
@@ -463,6 +610,29 @@ fun RunSessionScreen(
                                 currentSubtaskIndex = null
                                 subtaskTimer = 0
                                 selectedTaskIndex = null
+                                // Stop all animation, audio, and vibration
+                                sessionShakeActive = false
+                                taskShakeActive = false
+                                subtaskShakeActive = false
+                                // Launch coroutine to snap animations
+                                coroutineScope.launch {
+                                    sessionTimerShake.snapTo(0f)
+                                    taskTimerShake.snapTo(0f)
+                                    subtaskTimerShake.snapTo(0f)
+                                }
+                                mediaPlayer.value?.let { mp ->
+                                    try {
+                                        if (mp.isPlaying) {
+                                            mp.stop()
+                                        }
+                                    } catch (e: IllegalStateException) {
+                                        // Ignore, safe to release
+                                    } finally {
+                                        mp.release()
+                                    }
+                                }
+                                mediaPlayer.value = null
+                                vibrator?.cancel()
                             },
                             modifier = Modifier.size(72.dp)
                         ) {
