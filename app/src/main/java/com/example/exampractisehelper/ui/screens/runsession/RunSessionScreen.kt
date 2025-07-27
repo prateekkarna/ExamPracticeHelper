@@ -68,7 +68,7 @@ fun RunSessionScreen(
         while (sessionRunning) {
             delay(1000)
             if (sessionCountsDown) {
-                if (sessionTimer > 0) sessionTimer--
+                sessionTimer-- // allow negative values
             } else {
                 sessionTimer++
             }
@@ -76,23 +76,43 @@ fun RunSessionScreen(
     }
     // Task timer logic
     LaunchedEffect(taskRunning) {
-        while (taskRunning && taskTimer > 0) {
+        while (taskRunning) {
             delay(1000)
-            taskTimer--
+            if (currentTask?.taskDuration != null && currentTask.taskDuration > 0) {
+                taskTimer-- // allow negative values
+            } else {
+                taskTimer++
+            }
+            // If task timer is negative, stop subtask timer
+            if (taskTimer < 0) {
+                subtaskRunning = false
+            }
         }
     }
     // Subtask timer logic
-    LaunchedEffect(subtaskRunning) {
-        while (subtaskRunning && subtaskTimer > 0) {
-            delay(1000)
-            subtaskTimer--
+    LaunchedEffect(subtaskRunning, currentSubtaskIndex, subtaskTimer) {
+        if (subtaskRunning) {
+            while (subtaskRunning && subtaskTimer > 0) {
+                delay(1000)
+                subtaskTimer--
+                // When subtask timer reaches 0, move to next subtask if available
+                if (subtaskTimer == 0 && currentSubtaskIndex != null) {
+                    val nextIndex = currentSubtaskIndex!! + 1
+                    if (nextIndex < subtasks.size) {
+                        currentSubtaskIndex = nextIndex
+                        subtaskTimer = subtasks[nextIndex].duration ?: 0
+                    } else {
+                        subtaskRunning = false // No more subtasks
+                    }
+                }
+            }
         }
     }
 
     // Timer font sizes
     val smallestTimerSize = MaterialTheme.typography.displaySmall.fontSize
-    val mediumTimerSize = MaterialTheme.typography.displayMedium.fontSize * 1.5f
-    val largestTimerSize = MaterialTheme.typography.displayLarge.fontSize * 1.3f
+    val mediumTimerSize = MaterialTheme.typography.displayMedium.fontSize * 1.3f
+    val largestTimerSize = if (sessionTimer < 0 || taskTimer < 0) MaterialTheme.typography.displayLarge.fontSize * 1.2f else MaterialTheme.typography.displayLarge.fontSize * 1.3f
 
     // Determine which timers are visible
     val showSubtaskTimer = subtasks.isNotEmpty()
@@ -111,6 +131,10 @@ fun RunSessionScreen(
         else -> mediumTimerSize
     }
     val subtaskTimerFontSize = if (showSubtaskTimer) largestTimerSize else mediumTimerSize
+
+    // Timer color logic
+    val sessionTimerColor = if (sessionTimer < 0) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
+    val taskTimerColor = if (taskTimer < 0) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.secondary
 
     Column(
         modifier = Modifier
@@ -200,8 +224,12 @@ fun RunSessionScreen(
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
-                            text = String.format(Locale.getDefault(), "%02d:%02d:%02d", sessionTimer / 3600, (sessionTimer % 3600) / 60, sessionTimer % 60),
-                            style = MaterialTheme.typography.displayMedium.copy(fontSize = sessionTimerFontSize, color = MaterialTheme.colorScheme.primary)
+                            text = String.format(Locale.getDefault(), "%s%02d:%02d:%02d",
+                                if (sessionTimer < 0) "-" else "",
+                                kotlin.math.abs(sessionTimer) / 3600,
+                                (kotlin.math.abs(sessionTimer) % 3600) / 60,
+                                kotlin.math.abs(sessionTimer) % 60),
+                            style = MaterialTheme.typography.displayMedium.copy(fontSize = sessionTimerFontSize, color = sessionTimerColor)
                         )
                     }
                     Spacer(Modifier.height(4.dp))
@@ -244,8 +272,12 @@ fun RunSessionScreen(
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
-                            text = String.format(Locale.getDefault(), "%02d:%02d:%02d", taskTimer / 3600, (taskTimer % 3600) / 60, taskTimer % 60),
-                            style = MaterialTheme.typography.displaySmall.copy(fontSize = taskTimerFontSize, color = MaterialTheme.colorScheme.secondary)
+                            text = String.format(Locale.getDefault(), "%s%02d:%02d:%02d",
+                                if (taskTimer < 0) "-" else "",
+                                kotlin.math.abs(taskTimer) / 3600,
+                                (kotlin.math.abs(taskTimer) % 3600) / 60,
+                                kotlin.math.abs(taskTimer) % 60),
+                            style = MaterialTheme.typography.displaySmall.copy(fontSize = taskTimerFontSize, color = taskTimerColor)
                         )
                     }
                     Spacer(Modifier.height(4.dp))
@@ -381,7 +413,11 @@ fun RunSessionScreen(
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
-                            text = String.format(Locale.getDefault(), "%02d:%02d:%02d", sessionTimer / 3600, (sessionTimer % 3600) / 60, sessionTimer % 60),
+                            text = String.format(Locale.getDefault(), "%s%02d:%02d:%02d",
+                                if (sessionTimer < 0) "-" else "",
+                                kotlin.math.abs(sessionTimer) / 3600,
+                                (kotlin.math.abs(sessionTimer) % 3600) / 60,
+                                kotlin.math.abs(sessionTimer) % 60),
                             style = MaterialTheme.typography.displayLarge.copy(fontSize = largestTimerSize, color = MaterialTheme.colorScheme.primary)
                         )
                     }
