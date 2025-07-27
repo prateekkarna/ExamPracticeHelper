@@ -574,13 +574,17 @@ fun CreateSessionScreen(
                 Button(
                     onClick = {
                         // Save session logic
+
+                        // Calculate session duration in seconds
+                        val sessionDurationSeconds = (sessionHours.ifBlank { "0" }.toIntOrNull() ?: 0) * 3600 +
+                            (sessionMinutes.ifBlank { "0" }.toIntOrNull() ?: 0) * 60 +
+                            (sessionSeconds.ifBlank { "0" }.toIntOrNull() ?: 0)
                         // Compose PracticeSession, Task, Subtask objects from UI state
-                        // For demonstration, only sessionName is used
                         val session = com.example.exampractisehelper.data.entities.PracticeSession(
                             sessionId = 0,
                             name = sessionName,
-                            isTimed = false,
-                            totalDuration = null
+                            isTimed = sessionDurationSeconds > 0,
+                            totalDuration = if (sessionDurationSeconds > 0) sessionDurationSeconds else null
                         )
                         val tasksWithSubtasks = tasks.map { (taskName, subtasks, timerTriple) ->
                             val hasSubtasks = subtasks.isNotEmpty()

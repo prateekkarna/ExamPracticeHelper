@@ -1,6 +1,8 @@
 package com.example.exampractisehelper.ui.screens.createSession.components
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
@@ -54,7 +56,10 @@ fun AddTaskComponent(
     val isTaskSecondsValid = taskSeconds.isBlank() || (taskSeconds.toIntOrNull() ?: 0) in 0..59
     val isTaskDurationValid = taskHours.isNotBlank() || taskMinutes.isNotBlank() || taskSeconds.isNotBlank()
 
-    Column {
+    Column(
+        Modifier
+            .verticalScroll(rememberScrollState())
+    ) {
         Row(
             Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically

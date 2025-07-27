@@ -12,4 +12,7 @@ interface PracticeSessionDao {
 
     @Query("SELECT * FROM practice_sessions")
     suspend fun getAllSessions(): List<PracticeSession>
+
+    @Query("DELETE FROM practice_sessions WHERE sessionId = :sessionId")
+    suspend fun deleteSessionById(sessionId: Int)
 }

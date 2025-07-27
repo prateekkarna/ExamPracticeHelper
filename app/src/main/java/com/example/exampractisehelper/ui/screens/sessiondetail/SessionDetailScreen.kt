@@ -12,6 +12,16 @@ import androidx.compose.ui.unit.dp
 import com.example.exampractisehelper.data.entities.PracticeSession
 import com.example.exampractisehelper.data.entities.Task
 import com.example.exampractisehelper.data.entities.Subtask
+import androidx.navigation.NavController
+import androidx.lifecycle.viewmodel.compose.viewModel
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.LaunchedEffect
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -21,8 +31,19 @@ fun SessionDetailScreen(
     subtasksMap: Map<Int, List<Subtask>>,
     onEdit: () -> Unit,
     onDelete: () -> Unit,
-    onRun: () -> Unit
+    onRun: () -> Unit,
+    navController: NavController,
+    sessionRepository: com.example.exampractisehelper.data.repository.PracticeSessionRepository
 ) {
+    var deleteRequested by remember { mutableStateOf(false) }
+    LaunchedEffect(deleteRequested) {
+        if (deleteRequested && session != null) {
+            sessionRepository.deleteSessionById(session.sessionId)
+            navController.navigate("home") {
+                popUpTo("home") { inclusive = true }
+            }
+        }
+    }
     Scaffold(
         topBar = {
             TopAppBar(
@@ -31,7 +52,7 @@ fun SessionDetailScreen(
                     IconButton(onClick = onEdit) {
                         Icon(Icons.Default.Edit, contentDescription = "Edit")
                     }
-                    IconButton(onClick = onDelete) {
+                    IconButton(onClick = { deleteRequested = true }) {
                         Icon(Icons.Default.Delete, contentDescription = "Delete")
                     }
                     IconButton(onClick = onRun) {

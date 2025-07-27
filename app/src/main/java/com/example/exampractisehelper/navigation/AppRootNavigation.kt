@@ -132,12 +132,16 @@ fun AppRootNavigation() {
                     tasks = tasks,
                     subtasksMap = subtasksMap,
                     onEdit = { /* TODO: Implement edit */ },
-                    onDelete = { /* TODO: Implement delete */ },
+                    onDelete = {
+                        // Just signal delete intent, actual deletion handled in SessionDetailScreen
+                    },
                     onRun = {
                         session?.let {
                             navController.navigate("run_session/${it.sessionId}")
                         }
-                    }
+                    },
+                    navController = navController,
+                    sessionRepository = sessionRepository
                 )
             }
             composable(
@@ -158,15 +162,18 @@ fun AppRootNavigation() {
                 .build()
                 val sessionRepository = com.example.exampractisehelper.data.repository.PracticeSessionRepositoryImpl(db.practiceSessionDao())
                 val taskDao = db.taskDao()
-                val sessionState = androidx.compose.runtime.produceState<Pair<com.example.exampractisehelper.data.entities.PracticeSession?, List<String>>?>(initialValue = null, sessionId) {
+                val subTaskDao = db.subTaskDao()
+                val sessionState = androidx.compose.runtime.produceState<Triple<com.example.exampractisehelper.data.entities.PracticeSession?, List<com.example.exampractisehelper.data.entities.Task>, Map<Int, List<com.example.exampractisehelper.data.entities.Subtask>>>?>(initialValue = null, sessionId) {
                     val session = sessionRepository.getAllSessions().find { it.sessionId == sessionId }
-                    val tasks = taskDao.getTasksForSession(sessionId).map { it.text }
-                    value = session to tasks
+                    val tasks = taskDao.getTasksForSession(sessionId)
+                    val subtasksMap = tasks.associate { it.taskId to subTaskDao.getSubtasksForTask(it.taskId) }
+                    value = Triple(session, tasks, subtasksMap)
                 }
-                sessionState.value?.let { (session, taskNames) ->
+                sessionState.value?.let { (session, tasks, subtasksMap) ->
                     com.example.exampractisehelper.ui.screens.runsession.RunSessionScreen(
-                        sessionName = session?.name ?: "Session",
-                        tasks = taskNames,
+                        session = session,
+                        tasks = tasks,
+                        subtasksMap = subtasksMap,
                         navController = navController
                     )
                 }
