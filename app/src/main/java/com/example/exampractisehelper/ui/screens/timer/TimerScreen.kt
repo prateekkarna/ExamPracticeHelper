@@ -1,13 +1,28 @@
 package com.example.exampractisehelper.ui.screens.timer
 
+import android.content.Context
+import android.media.MediaPlayer
+import android.os.VibrationEffect
+import android.os.Vibrator
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
+import com.example.exampractisehelper.R
+import com.example.exampractisehelper.data.database.PracticeDatabase
 import java.util.Locale
+import androidx.compose.ui.platform.LocalContext
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import androidx.room.Room
+import com.example.exampractisehelper.data.database.MIGRATION_2_3
 
 @Composable
 fun TimerScreen() {
@@ -19,7 +34,82 @@ fun TimerScreen() {
     var inputHours by remember { mutableStateOf(0) } // Added for hours
     var showInput by remember { mutableStateOf(false) }
     val formattedTime = String.format(Locale.getDefault(), "%02d:%02d:%02d", timerValue / 3600, (timerValue % 3600) / 60, timerValue % 60)
+    val context = LocalContext.current
+    val coroutineScope = rememberCoroutineScope()
+    val db = remember {
+        Room.databaseBuilder(
+            context,
+            PracticeDatabase::class.java,
+            "exam_practise_helper_db_v2"
+        )
+        .addMigrations(MIGRATION_2_3)
+        .fallbackToDestructiveMigration()
+        .fallbackToDestructiveMigrationOnDowngrade()
+        .build()
+    }
+    val settingsDao = remember { db.settingsDao() }
+    var alertType by remember { mutableStateOf("audio") }
+    LaunchedEffect(Unit) {
+        val settings = withContext(Dispatchers.IO) { settingsDao.getSettings() }
+        alertType = settings?.alertType ?: "audio"
+    }
+    fun shouldVibrate() = alertType == "vibration" || alertType == "both"
+    fun shouldPlayAudio() = alertType == "audio" || alertType == "both"
+    val vibrator = remember {
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
+            context.getSystemService(android.os.VibratorManager::class.java)?.defaultVibrator
+        } else {
+            @Suppress("DEPRECATION")
+            context.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
+        }
+    }
+    val mediaPlayer = remember { mutableStateOf<MediaPlayer?>(null) }
+    fun playAlarm() {
+        mediaPlayer.value?.release()
+        val mp = MediaPlayer.create(context, R.raw.alarm)
+        mp?.setOnCompletionListener { it.release() }
+        mp?.start()
+        mediaPlayer.value = mp
+    }
+    val timerShake = remember { Animatable(0f) }
+    var shakeActive by remember { mutableStateOf(false) }
+    var prevTimerValue by remember { mutableStateOf(timerValue) }
+    var alertTriggered by remember { mutableStateOf(false) }
+    LaunchedEffect(running, isStopwatch, timerValue) {
+        if (running && !isStopwatch && !alertTriggered && prevTimerValue > 5 && timerValue <= 5 && timerValue > 0) {
+            if (shouldVibrate()) {
+                vibrator?.let {
+                    if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+                        it.vibrate(VibrationEffect.createOneShot(5000, VibrationEffect.DEFAULT_AMPLITUDE))
+                    } else {
+                        @Suppress("DEPRECATION")
+                        it.vibrate(5000)
+                    }
+                }
+            }
+            if (shouldPlayAudio()) {
+                playAlarm()
+            }
+            shakeActive = true
+            coroutineScope.launch {
+                val shakeDuration = 5000L // ms (5 seconds)
+                val shakeStep = 50 // ms
+                val shakeTimes = (shakeDuration / shakeStep).toInt()
+                repeat(shakeTimes) {
+                    timerShake.snapTo(20f)
+                    timerShake.animateTo(0f, animationSpec = tween(shakeStep))
+                }
+                shakeActive = false
+            }
+            alertTriggered = true
+        }
+        if (!running || timerValue == 0L) {
+            alertTriggered = false
+        }
+        prevTimerValue = timerValue
+    }
 
+    // Timer running logic
     LaunchedEffect(running, isStopwatch) {
         while (running) {
             kotlinx.coroutines.delay(1000)
@@ -85,6 +175,9 @@ fun TimerScreen() {
                 textAlign = TextAlign.Center,
                 modifier = Modifier
                     .padding(16.dp)
+                    .graphicsLayer {
+                        translationX = if (shakeActive) timerShake.value else 0f
+                    }
             )
             Row(Modifier.padding(vertical = 16.dp)) {
                 Button(
