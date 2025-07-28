@@ -31,7 +31,7 @@ fun AboutScreen() {
                     style = MaterialTheme.typography.bodyLarge
                 )
                 Spacer(Modifier.height(24.dp))
-                Text("Developed by Your Name", style = MaterialTheme.typography.bodySmall)
+                Text("Developed by Pride Of Mithila", style = MaterialTheme.typography.bodySmall)
                 Text("© 2025", style = MaterialTheme.typography.bodySmall)
             }
         }

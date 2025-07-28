@@ -30,7 +30,7 @@ fun AddSubtaskComponent(
             OutlinedTextField(
                 value = subtaskName,
                 onValueChange = onSubtaskNameChange,
-                label = { Text("Subtask Name") },
+                label = { Text("Subtask Name* (eg. Intro, Conclusion)") },
                 singleLine = true,
                 modifier = Modifier.weight(1f)
             )
