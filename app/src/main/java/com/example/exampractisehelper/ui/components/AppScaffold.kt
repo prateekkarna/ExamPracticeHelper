@@ -17,6 +17,7 @@ import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.TrackChanges
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -89,6 +90,7 @@ fun AppScaffold(
                     val route = label.lowercase()
                     val icon = when (route) {
                         "home" -> Icons.Default.Home
+                        "settings" -> Icons.Default.Settings
                         "about" -> Icons.Default.Info
                         else -> null
                     }
@@ -112,6 +114,17 @@ fun AppScaffold(
                         modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
                     )
                 }
+                // Move About below Settings
+                /*
+                val aboutIndex = drawerItems.indexOfFirst { it.equals("about", ignoreCase = true) }
+                val settingsIndex = drawerItems.indexOfFirst { it.equals("settings", ignoreCase = true) }
+                if (aboutIndex >= 0 && settingsIndex >= 0 && aboutIndex < settingsIndex) {
+                    // If About is above Settings, swap them
+                    val mutableDrawerItems = drawerItems.toMutableList()
+                    val about = mutableDrawerItems.removeAt(aboutIndex)
+                    mutableDrawerItems.add(settingsIndex, about)
+                }
+                */
             }
         }
     ) {

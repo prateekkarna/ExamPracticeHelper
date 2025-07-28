@@ -8,6 +8,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.example.exampractisehelper.data.database.PracticeDatabase
+import com.example.exampractisehelper.data.database.MIGRATION_2_3
 import com.example.exampractisehelper.data.repository.ExamRepository
 import com.example.exampractisehelper.data.repository.PracticeSessionRepositoryImpl
 import com.example.exampractisehelper.ui.components.ExamCard
@@ -36,6 +37,7 @@ fun HomeScreen(
         PracticeDatabase::class.java,
         "exam_practise_helper_db_v2"
     )
+    .addMigrations(MIGRATION_2_3)
     .fallbackToDestructiveMigration()
     .fallbackToDestructiveMigrationOnDowngrade()
     .build()

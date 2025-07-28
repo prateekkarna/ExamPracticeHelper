@@ -23,7 +23,7 @@ fun AppRootNavigation() {
     val navController = rememberNavController()
     AppScaffold(
         navController = navController,
-        drawerItems = listOf("Home", "About")
+        drawerItems = listOf("Home", "Settings", "About")
     ) {
         NavHost(navController, startDestination = "home") {
             composable("home") {
@@ -177,6 +177,9 @@ fun AppRootNavigation() {
                     sessionId = sessionId,
                     navController = navController
                 )
+            }
+            composable("settings") {
+                com.example.exampractisehelper.ui.screens.settings.SettingsScreen()
             }
         }
     }

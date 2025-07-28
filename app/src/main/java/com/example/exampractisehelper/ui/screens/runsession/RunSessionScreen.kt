@@ -39,6 +39,9 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.room.Room
 import com.example.exampractisehelper.data.database.PracticeDatabase
 import com.example.exampractisehelper.data.repository.PracticeSessionRepositoryImpl
+import com.example.exampractisehelper.data.database.MIGRATION_2_3
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 @Composable
 fun RunSessionScreen(
@@ -51,13 +54,27 @@ fun RunSessionScreen(
             context,
             PracticeDatabase::class.java,
             "exam_practise_helper_db_v2"
-        ).fallbackToDestructiveMigration()
-         .fallbackToDestructiveMigrationOnDowngrade()
-         .build()
+        )
+        .addMigrations(MIGRATION_2_3)
+        .build()
     }
     val sessionRepository = remember { PracticeSessionRepositoryImpl(db.practiceSessionDao()) }
     val taskDao = remember { db.taskDao() }
     val subTaskDao = remember { db.subTaskDao() }
+    val settingsDao = remember { db.settingsDao() }
+    var alertType by remember { mutableStateOf("audio") }
+    LaunchedEffect(Unit) {
+        val settings = withContext(Dispatchers.IO) { settingsDao.getSettings() }
+        alertType = settings?.alertType ?: "audio"
+    }
+    fun shouldVibrate(): Boolean = alertType == "vibration" || alertType == "both"
+    fun shouldPlayAudio(): Boolean = alertType == "audio" || alertType == "both"
+    // If alertType is empty or not set, neither should trigger
+    if (alertType.isBlank()) {
+        fun shouldVibrate(): Boolean = false
+        fun shouldPlayAudio(): Boolean = false
+    }
+
     val sessionState = produceState<Triple<com.example.exampractisehelper.data.entities.PracticeSession?, List<com.example.exampractisehelper.data.entities.Task>, Map<Int, List<com.example.exampractisehelper.data.entities.Subtask>>>?>(initialValue = null, sessionId) {
         val session = sessionRepository.getAllSessions().find { it.sessionId == sessionId }
         val tasks = taskDao.getTasksForSession(sessionId)
@@ -167,15 +184,19 @@ fun RunSessionScreen(
                 }
                 // Vibrate and play audio for session timer
                 if (sessionPrevTimer > 5 && sessionTimer <= 5 && sessionTimer > 0) {
-                    vibrator?.let {
-                        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
-                            it.vibrate(android.os.VibrationEffect.createOneShot(5000, android.os.VibrationEffect.DEFAULT_AMPLITUDE))
-                        } else {
-                            @Suppress("DEPRECATION")
-                            it.vibrate(5000)
+                    if (shouldVibrate()) {
+                        vibrator?.let {
+                            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+                                it.vibrate(android.os.VibrationEffect.createOneShot(5000, android.os.VibrationEffect.DEFAULT_AMPLITUDE))
+                            } else {
+                                @Suppress("DEPRECATION")
+                                it.vibrate(5000)
+                            }
                         }
                     }
-                    playAlarm()
+                    if (shouldPlayAudio()) {
+                        playAlarm()
+                    }
                     sessionShakeActive = true
                     coroutineScope.launch {
                         val shakeDuration = 5000 // ms
@@ -198,15 +219,19 @@ fun RunSessionScreen(
                     }
                     // Vibrate and play audio for task timer
                     if (taskPrevTimer > 5 && taskTimer <= 5 && taskTimer > 0) {
-                        vibrator?.let {
-                            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
-                                it.vibrate(android.os.VibrationEffect.createOneShot(5000, android.os.VibrationEffect.DEFAULT_AMPLITUDE))
+                        if (shouldVibrate()) {
+                            vibrator?.let {
+                                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+                                    it.vibrate(android.os.VibrationEffect.createOneShot(5000, android.os.VibrationEffect.DEFAULT_AMPLITUDE))
                             } else {
                                 @Suppress("DEPRECATION")
                                 it.vibrate(5000)
                             }
                         }
-                        playAlarm()
+                        }
+                        if (shouldPlayAudio()) {
+                            playAlarm()
+                        }
                         taskShakeActive = true
                         coroutineScope.launch {
                             val shakeDuration = 5000 // ms
@@ -224,17 +249,20 @@ fun RunSessionScreen(
                 // Update subtask timer if running
                 if (subtaskRunning && currentSubtaskIndex != null && subtasks.isNotEmpty()) {
                     subtaskTimer -= elapsed
-                    // Vibrate and play audio for subtask timer
                     if (subtaskPrevTimer > 5 && subtaskTimer <= 5 && subtaskTimer > 0) {
-                        vibrator?.let {
-                            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
-                                it.vibrate(android.os.VibrationEffect.createOneShot(5000, android.os.VibrationEffect.DEFAULT_AMPLITUDE))
-                            } else {
-                                @Suppress("DEPRECATION")
-                                it.vibrate(5000)
+                        if (shouldVibrate()) {
+                            vibrator?.let {
+                                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+                                    it.vibrate(android.os.VibrationEffect.createOneShot(5000, android.os.VibrationEffect.DEFAULT_AMPLITUDE))
+                                } else {
+                                    @Suppress("DEPRECATION")
+                                    it.vibrate(5000)
+                                }
                             }
                         }
-                        playAlarm()
+                        if (shouldPlayAudio()) {
+                            playAlarm()
+                        }
                         subtaskShakeActive = true
                         coroutineScope.launch {
                             val shakeDuration = 5000 // ms

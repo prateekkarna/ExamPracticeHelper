@@ -72,6 +72,7 @@ dependencies {
     kapt("androidx.hilt:hilt-compiler:1.2.0")
 
     implementation(libs.androidx.material3)
+    implementation("androidx.datastore:datastore-preferences:1.0.0")
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
