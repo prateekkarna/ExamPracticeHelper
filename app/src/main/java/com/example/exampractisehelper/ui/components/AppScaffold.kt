@@ -19,6 +19,7 @@ import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.TrackChanges
+import androidx.compose.material.icons.filled.Timer
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -92,6 +93,7 @@ fun AppScaffold(
                         "home" -> Icons.Default.Home
                         "settings" -> Icons.Default.Settings
                         "about" -> Icons.Default.Info
+                        "activity" -> Icons.Default.Timer
                         else -> null
                     }
                     val isSelected = navController.currentBackStackEntry?.destination?.route == route

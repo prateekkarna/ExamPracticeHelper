@@ -23,14 +23,16 @@ fun AppRootNavigation() {
     val navController = rememberNavController()
     AppScaffold(
         navController = navController,
-        drawerItems = listOf("Home", "Settings", "About")
+        drawerItems = listOf("Home", "Activity", "Settings", "About")
     ) {
         NavHost(navController, startDestination = "home") {
             composable("home") {
                 HomeScreen(navController, onCreateExamClick = {
                     navController.navigate("create_session")
                 })
-                //Text("Home Screen")
+            }
+            composable("activity") {
+                com.example.exampractisehelper.ui.screens.timer.TimerScreen()
             }
             composable("create_exam") {
                 val context = androidx.compose.ui.platform.LocalContext.current
