@@ -151,32 +151,10 @@ fun AppRootNavigation() {
                 )
             ) { backStackEntry ->
                 val sessionId = backStackEntry.arguments?.getInt("sessionId") ?: 0
-                val context = androidx.compose.ui.platform.LocalContext.current
-                val db = androidx.room.Room.databaseBuilder(
-                    context,
-                    com.example.exampractisehelper.data.database.PracticeDatabase::class.java,
-                    "exam_practise_helper_db_v2"
+                com.example.exampractisehelper.ui.screens.runsession.RunSessionScreen(
+                    sessionId = sessionId,
+                    navController = navController
                 )
-                .fallbackToDestructiveMigration()
-                .fallbackToDestructiveMigrationOnDowngrade()
-                .build()
-                val sessionRepository = com.example.exampractisehelper.data.repository.PracticeSessionRepositoryImpl(db.practiceSessionDao())
-                val taskDao = db.taskDao()
-                val subTaskDao = db.subTaskDao()
-                val sessionState = androidx.compose.runtime.produceState<Triple<com.example.exampractisehelper.data.entities.PracticeSession?, List<com.example.exampractisehelper.data.entities.Task>, Map<Int, List<com.example.exampractisehelper.data.entities.Subtask>>>?>(initialValue = null, sessionId) {
-                    val session = sessionRepository.getAllSessions().find { it.sessionId == sessionId }
-                    val tasks = taskDao.getTasksForSession(sessionId)
-                    val subtasksMap = tasks.associate { it.taskId to subTaskDao.getSubtasksForTask(it.taskId) }
-                    value = Triple(session, tasks, subtasksMap)
-                }
-                sessionState.value?.let { (session, tasks, subtasksMap) ->
-                    com.example.exampractisehelper.ui.screens.runsession.RunSessionScreen(
-                        session = session,
-                        tasks = tasks,
-                        subtasksMap = subtasksMap,
-                        navController = navController
-                    )
-                }
             }
             composable("profile") {
                 com.example.exampractisehelper.ui.screens.profile.ProfileScreen()

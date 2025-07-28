@@ -32,14 +32,46 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.keepScreenOn
 import androidx.compose.runtime.rememberCoroutineScope
 import kotlinx.coroutines.launch
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.ui.platform.LocalContext
+import androidx.room.Room
+import com.example.exampractisehelper.data.database.PracticeDatabase
+import com.example.exampractisehelper.data.repository.PracticeSessionRepositoryImpl
 
 @Composable
 fun RunSessionScreen(
-    session: PracticeSession?,
-    tasks: List<Task>,
-    subtasksMap: Map<Int, List<Subtask>>,
+    sessionId: Int,
     navController: NavController
 ) {
+    val context = LocalContext.current
+    val db = remember {
+        Room.databaseBuilder(
+            context,
+            PracticeDatabase::class.java,
+            "exam_practise_helper_db_v2"
+        ).fallbackToDestructiveMigration()
+         .fallbackToDestructiveMigrationOnDowngrade()
+         .build()
+    }
+    val sessionRepository = remember { PracticeSessionRepositoryImpl(db.practiceSessionDao()) }
+    val taskDao = remember { db.taskDao() }
+    val subTaskDao = remember { db.subTaskDao() }
+    val sessionState = produceState<Triple<com.example.exampractisehelper.data.entities.PracticeSession?, List<com.example.exampractisehelper.data.entities.Task>, Map<Int, List<com.example.exampractisehelper.data.entities.Subtask>>>?>(initialValue = null, sessionId) {
+        val session = sessionRepository.getAllSessions().find { it.sessionId == sessionId }
+        val tasks = taskDao.getTasksForSession(sessionId)
+        val subtasksMap = tasks.associate { it.taskId to subTaskDao.getSubtasksForTask(it.taskId) }
+        value = Triple(session, tasks, subtasksMap)
+    }
+    if (sessionState.value == null) {
+        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            CircularProgressIndicator()
+        }
+        return
+    }
+    val (session, tasks, subtasksMap) = sessionState.value!!
+
     // Session timer
     val sessionDuration = session?.totalDuration ?: 0
     var sessionTimer by remember { mutableStateOf(if (sessionDuration > 0) sessionDuration else 0) }
@@ -85,7 +117,6 @@ fun RunSessionScreen(
     var showSelectTaskTooltip by remember { mutableStateOf(false) }
 
     // Vibration logic
-    val context = LocalContext.current
     val vibrator = remember {
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
             context.getSystemService(android.os.VibratorManager::class.java)?.defaultVibrator
@@ -738,9 +769,7 @@ fun RunSessionScreenPreview() {
             )
         )
         RunSessionScreen(
-            session = dummySession,
-            tasks = dummyTasks,
-            subtasksMap = dummySubtasksMap,
+            sessionId = 1,
             navController = NavController(LocalContext.current)
         )
     }
