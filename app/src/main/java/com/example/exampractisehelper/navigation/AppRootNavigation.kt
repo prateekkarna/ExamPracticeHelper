@@ -131,7 +131,11 @@ fun AppRootNavigation() {
                     session = session,
                     tasks = tasks,
                     subtasksMap = subtasksMap,
-                    onEdit = { /* TODO: Implement edit */ },
+                    onEdit = {
+                        session?.let {
+                            navController.navigate("edit_session/${it.sessionId}")
+                        }
+                    },
                     onDelete = {
                         // Just signal delete intent, actual deletion handled in SessionDetailScreen
                     },
@@ -161,6 +165,18 @@ fun AppRootNavigation() {
             }
             composable("about") {
                 com.example.exampractisehelper.ui.screens.about.AboutScreen()
+            }
+            composable(
+                route = "edit_session/{sessionId}",
+                arguments = listOf(
+                    navArgument("sessionId") { type = NavType.IntType }
+                )
+            ) { backStackEntry ->
+                val sessionId = backStackEntry.arguments?.getInt("sessionId") ?: 0
+                com.example.exampractisehelper.ui.screens.createSession.EditSessionScreen(
+                    sessionId = sessionId,
+                    navController = navController
+                )
             }
         }
     }

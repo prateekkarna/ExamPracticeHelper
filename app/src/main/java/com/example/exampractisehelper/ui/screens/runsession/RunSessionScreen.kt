@@ -534,7 +534,7 @@ fun RunSessionScreen(
                 )
             }
             // Move available tasks card below the task timer card
-            Text("Available Tasks (Click to start)", style = MaterialTheme.typography.titleMedium)
+            Text("Select to start or switch between tasks", style = MaterialTheme.typography.titleMedium)
             Spacer(Modifier.height(8.dp))
             tasks.chunked(2).forEach { rowTasks ->
                 Row(

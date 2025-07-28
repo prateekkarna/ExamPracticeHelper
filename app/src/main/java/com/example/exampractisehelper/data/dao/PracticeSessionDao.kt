@@ -15,4 +15,7 @@ interface PracticeSessionDao {
 
     @Query("DELETE FROM practice_sessions WHERE sessionId = :sessionId")
     suspend fun deleteSessionById(sessionId: Int)
+
+    @Query("UPDATE practice_sessions SET name = :name, isTimed = :isTimed, totalDuration = :totalDuration WHERE sessionId = :sessionId")
+    suspend fun updateSession(sessionId: Int, name: String, isTimed: Boolean, totalDuration: Int?)
 }
