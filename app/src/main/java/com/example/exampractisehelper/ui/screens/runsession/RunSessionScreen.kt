@@ -610,7 +610,12 @@ fun RunSessionScreen(
                                     val subList = subtasksMap[task.taskId]
                                     currentSubtaskIndex = if (subList?.isNotEmpty() == true) 0 else null
                                     subtaskTimer = subList?.getOrNull(0)?.duration ?: 0
-                                    subtaskRunning = false
+                                    // Fix: If timer is running and user clicks the same task again, start subtask timer if there are subtasks
+                                    if (subList?.isNotEmpty() == true && sessionRunning) {
+                                        subtaskRunning = true
+                                    } else {
+                                        subtaskRunning = false
+                                    }
                                 },
                             elevation = CardDefaults.cardElevation(2.dp)
                         ) {

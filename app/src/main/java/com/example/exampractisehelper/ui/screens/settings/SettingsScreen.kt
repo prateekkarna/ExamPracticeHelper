@@ -41,13 +41,13 @@ fun SettingsScreen() {
     }
     val settingsDao = remember { db.settingsDao() }
     val scope = rememberCoroutineScope()
-    var selectedAlert by remember { mutableStateOf("audio") }
+    var selectedAlert by remember { mutableStateOf("both") }
     var settingsLoaded by remember { mutableStateOf(false) }
     LaunchedEffect(Unit) {
         val settings = settingsDao.getSettings()
         if (settings == null) {
-            settingsDao.insertSettings(Settings(alertType = "audio"))
-            selectedAlert = "audio"
+            settingsDao.insertSettings(Settings(alertType = "both"))
+            selectedAlert = "both"
         } else {
             selectedAlert = settings.alertType
         }
