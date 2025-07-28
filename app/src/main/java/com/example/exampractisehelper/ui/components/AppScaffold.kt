@@ -3,12 +3,27 @@ package com.example.exampractisehelper.ui.components
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.TrackChanges
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.ModalDrawerSheet
@@ -19,6 +34,8 @@ import androidx.compose.material3.Icon
 import androidx.navigation.NavController
 import com.example.exampractisehelper.navigation.Screen
 import kotlinx.coroutines.launch
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.layout.*
 
 @OptIn(ExperimentalMaterial3Api::class)
 
@@ -34,16 +51,65 @@ fun AppScaffold(
     ModalNavigationDrawer(
         drawerState = drawerState,
         drawerContent = {
-            ModalDrawerSheet {
-                Text("Navigation", modifier = Modifier.padding(16.dp))
+            ModalDrawerSheet(
+                drawerShape = RoundedCornerShape(topEnd = 32.dp, bottomEnd = 32.dp),
+                modifier = Modifier.background(
+                    brush = Brush.verticalGradient(
+                        colors = listOf(Color(0xFF1976D2), Color(0xFF63A4FF))
+                    )
+                )
+            ) {
+                // Drawer Header
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(Color(0xFF1976D2))
+                        .padding(vertical = 32.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            imageVector = Icons.Default.TrackChanges,
+                            contentDescription = "App Icon",
+                            tint = Color.White,
+                            modifier = Modifier.size(36.dp)
+                        )
+                        Spacer(Modifier.width(12.dp))
+                        Text(
+                            "Abhyasa",
+                            color = Color.White,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 22.sp
+                        )
+                    }
+                }
+                Spacer(Modifier.height(16.dp))
+                // Drawer Items with icons
                 drawerItems.forEach { label ->
+                    val route = label.lowercase()
+                    val icon = when (route) {
+                        "home" -> Icons.Default.Home
+                        "about" -> Icons.Default.Info
+                        else -> null
+                    }
+                    val isSelected = navController.currentBackStackEntry?.destination?.route == route
                     NavigationDrawerItem(
-                        label = { Text(label) },
-                        selected = navController.currentDestination?.route == label.lowercase(),
+                        label = { Text(label, fontWeight = FontWeight.Medium) },
+                        selected = isSelected,
                         onClick = {
-                            navController.navigate(label.lowercase())
+                            navController.navigate(route)
                             scope.launch { drawerState.close() }
-                        }
+                        },
+                        icon = icon?.let {
+                            {
+                                Icon(
+                                    it,
+                                    contentDescription = label,
+                                    tint = if (isSelected) MaterialTheme.colorScheme.primary else LocalContentColor.current
+                                )
+                            }
+                        },
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
                     )
                 }
             }
@@ -52,7 +118,18 @@ fun AppScaffold(
         Scaffold(
             topBar = {
                 TopAppBar(
-                    title = { Text("📚 Practice Helper") },
+                    title = {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                imageVector = Icons.Default.TrackChanges,
+                                contentDescription = "App Icon",
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(28.dp)
+                            )
+                            Spacer(Modifier.width(8.dp))
+                            Text("Abhyasa")
+                        }
+                    },
                     navigationIcon = {
                         IconButton(onClick = {
                             scope.launch { drawerState.open() }
