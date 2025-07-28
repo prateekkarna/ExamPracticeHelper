@@ -159,13 +159,13 @@ fun AppScaffold(
                             Icon(Icons.Default.Menu, contentDescription = "Menu")
                         }
                     },
-                    actions = {
-                        IconButton(onClick = {
-                            navController.navigate(Screen.Profile.route)
-                        }) {
-                            Icon(Icons.Default.Person, contentDescription = "Profile")
-                        }
-                    }
+//                    actions = {
+//                        IconButton(onClick = {
+//                            navController.navigate(Screen.Profile.route)
+//                        }) {
+//                            Icon(Icons.Default.Person, contentDescription = "Profile")
+//                        }
+//                    }
                 )
             }
         ) { innerPadding ->
