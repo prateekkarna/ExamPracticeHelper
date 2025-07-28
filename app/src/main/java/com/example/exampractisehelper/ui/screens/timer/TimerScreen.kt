@@ -109,6 +109,21 @@ fun TimerScreen() {
         prevTimerValue = timerValue
     }
 
+    // Helper to stop all alerts (vibration/audio)
+    fun stopAlerts() {
+        mediaPlayer.value?.let { mp ->
+            try {
+                if (mp.isPlaying) mp.stop()
+            } catch (e: IllegalStateException) {
+                // Ignore
+            } finally {
+                mp.release()
+            }
+        }
+        mediaPlayer.value = null
+        vibrator?.cancel()
+    }
+
     // Timer running logic
     LaunchedEffect(running, isStopwatch) {
         while (running) {
@@ -117,7 +132,10 @@ fun TimerScreen() {
                 timerValue += 1
             } else {
                 if (timerValue > 0) timerValue -= 1
-                if (timerValue == 0L) running = false
+                if (timerValue == 0L) {
+                    running = false
+                    stopAlerts() // Stop alerts when timer hits zero
+                }
             }
         }
     }
@@ -190,6 +208,8 @@ fun TimerScreen() {
                             }
                         } else {
                             running = false
+                            stopAlerts() // Stop alerts (audio/vibration)
+                            shakeActive = false // Stop shake animation
                         }
                     },
                     modifier = Modifier.height(56.dp).width(120.dp)
@@ -201,6 +221,8 @@ fun TimerScreen() {
                     onClick = {
                         running = false
                         timerValue = 0L
+                        stopAlerts() // Stop alerts (audio/vibration)
+                        shakeActive = false // Stop shake animation
                     },
                     modifier = Modifier.height(56.dp).width(120.dp)
                 ) {
@@ -254,6 +276,13 @@ fun TimerScreen() {
                     }
                 )
             }
+        }
+    }
+
+    // Stop alerts when composable leaves composition (navigation away)
+    DisposableEffect(Unit) {
+        onDispose {
+            stopAlerts()
         }
     }
 }

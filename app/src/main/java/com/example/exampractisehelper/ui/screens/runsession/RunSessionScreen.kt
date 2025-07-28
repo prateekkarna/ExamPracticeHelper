@@ -146,6 +146,15 @@ fun RunSessionScreen(
     var taskPrevTimer by remember { mutableStateOf(taskTimer) }
     var subtaskPrevTimer by remember { mutableStateOf(subtaskTimer) }
 
+    // Shake animation states for timer text
+    var sessionShakeActive by remember { mutableStateOf(false) }
+    var taskShakeActive by remember { mutableStateOf(false) }
+    var subtaskShakeActive by remember { mutableStateOf(false) }
+    val sessionTimerShake = remember { Animatable(0f) }
+    val taskTimerShake = remember { Animatable(0f) }
+    val subtaskTimerShake = remember { Animatable(0f) }
+    val coroutineScope = rememberCoroutineScope()
+
     // Audio logic
     val mediaPlayer = remember { mutableStateOf<android.media.MediaPlayer?>(null) }
     fun playAlarm() {
@@ -155,15 +164,29 @@ fun RunSessionScreen(
         mp?.start()
         mediaPlayer.value = mp
     }
-
-    // Shake animation states for timer text
-    val sessionTimerShake = remember { Animatable(0f) }
-    val taskTimerShake = remember { Animatable(0f) }
-    val subtaskTimerShake = remember { Animatable(0f) }
-    var sessionShakeActive by remember { mutableStateOf(false) }
-    var taskShakeActive by remember { mutableStateOf(false) }
-    var subtaskShakeActive by remember { mutableStateOf(false) }
-    val coroutineScope = rememberCoroutineScope()
+    // Helper to stop all alerts (vibration/audio)
+    fun stopAlerts() {
+        mediaPlayer.value?.let { mp ->
+            try {
+                if (mp.isPlaying) mp.stop()
+            } catch (e: IllegalStateException) {
+                // Ignore
+            } finally {
+                mp.release()
+            }
+        }
+        mediaPlayer.value = null
+        vibrator?.cancel()
+        // Stop shake animations
+        sessionShakeActive = false
+        taskShakeActive = false
+        subtaskShakeActive = false
+        coroutineScope.launch {
+            sessionTimerShake.snapTo(0f)
+            taskTimerShake.snapTo(0f)
+            subtaskTimerShake.snapTo(0f)
+        }
+    }
 
     // Synchronized Session, Task, and Subtask timer logic
     LaunchedEffect(sessionRunning, taskRunning, subtaskRunning, currentSubtaskIndex) {
@@ -352,10 +375,11 @@ fun RunSessionScreen(
                                 if (currentTaskIndex == null) {
                                     showSelectTaskTooltip = true
                                 } else {
+                                    stopAlerts() // Stop alerts on pause
                                     sessionRunning = !sessionRunning
                                     taskRunning = !taskRunning
                                     if (subtasks.isNotEmpty()) {
-                                        subtaskRunning = sessionRunning // Always start subtask timer when session starts
+                                        subtaskRunning = sessionRunning
                                     }
                                 }
                             },
@@ -383,7 +407,7 @@ fun RunSessionScreen(
                         Spacer(Modifier.weight(1f))
                         IconButton(
                             onClick = {
-                                // Reset all data to initial value
+                                stopAlerts() // Stop alerts on stop
                                 sessionRunning = false
                                 taskRunning = false
                                 subtaskRunning = false
@@ -393,29 +417,14 @@ fun RunSessionScreen(
                                 currentSubtaskIndex = null
                                 subtaskTimer = 0
                                 selectedTaskIndex = null
-                                // Stop all animation, audio, and vibration
                                 sessionShakeActive = false
                                 taskShakeActive = false
                                 subtaskShakeActive = false
-                                // Launch coroutine to snap animations
                                 coroutineScope.launch {
                                     sessionTimerShake.snapTo(0f)
                                     taskTimerShake.snapTo(0f)
                                     subtaskTimerShake.snapTo(0f)
                                 }
-                                mediaPlayer.value?.let { mp ->
-                                    try {
-                                        if (mp.isPlaying) {
-                                            mp.stop()
-                                        }
-                                    } catch (e: IllegalStateException) {
-                                        // Ignore, safe to release
-                                    } finally {
-                                        mp.release()
-                                    }
-                                }
-                                mediaPlayer.value = null
-                                vibrator?.cancel()
                             },
                             modifier = Modifier.size(56.dp),
                             enabled = currentTaskIndex != null
@@ -577,14 +586,31 @@ fun RunSessionScreen(
                                 .weight(1f)
                                 .padding(4.dp)
                                 .clickable {
+                                    // Only stop task/subtask alerts and animations, not session
+                                    taskShakeActive = false
+                                    subtaskShakeActive = false
+                                    coroutineScope.launch {
+                                        taskTimerShake.snapTo(0f)
+                                        subtaskTimerShake.snapTo(0f)
+                                    }
+                                    // Only stop task/subtask audio/vibration
+                                    mediaPlayer.value?.let { mp ->
+                                        try {
+                                            if (mp.isPlaying) mp.stop()
+                                        } catch (e: IllegalStateException) {
+                                            // Ignore
+                                        } finally {
+                                            mp.release()
+                                        }
+                                    }
+                                    mediaPlayer.value = null
+                                    vibrator?.cancel()
                                     currentTaskIndex = globalIndex
-                                    // Reset timers for selected task
                                     taskTimer = task.taskDuration ?: 0
                                     val subList = subtasksMap[task.taskId]
                                     currentSubtaskIndex = if (subList?.isNotEmpty() == true) 0 else null
                                     subtaskTimer = subList?.getOrNull(0)?.duration ?: 0
-                                    subtaskRunning = false // Do not start timers automatically
-                                    // sessionRunning and taskRunning should NOT start here
+                                    subtaskRunning = false
                                 },
                             elevation = CardDefaults.cardElevation(2.dp)
                         ) {
@@ -653,6 +679,7 @@ fun RunSessionScreen(
                     ) {
                         IconButton(
                             onClick = {
+                                stopAlerts() // Stop alerts on pause
                                 sessionRunning = !sessionRunning
                             },
                             modifier = Modifier.size(72.dp)
@@ -676,7 +703,7 @@ fun RunSessionScreen(
                         Spacer(Modifier.width(32.dp))
                         IconButton(
                             onClick = {
-                                // Reset all data to initial value
+                                stopAlerts() // Stop alerts on stop
                                 sessionRunning = false
                                 taskRunning = false
                                 subtaskRunning = false
@@ -686,29 +713,14 @@ fun RunSessionScreen(
                                 currentSubtaskIndex = null
                                 subtaskTimer = 0
                                 selectedTaskIndex = null
-                                // Stop all animation, audio, and vibration
                                 sessionShakeActive = false
                                 taskShakeActive = false
                                 subtaskShakeActive = false
-                                // Launch coroutine to snap animations
                                 coroutineScope.launch {
                                     sessionTimerShake.snapTo(0f)
                                     taskTimerShake.snapTo(0f)
                                     subtaskTimerShake.snapTo(0f)
                                 }
-                                mediaPlayer.value?.let { mp ->
-                                    try {
-                                        if (mp.isPlaying) {
-                                            mp.stop()
-                                        }
-                                    } catch (e: IllegalStateException) {
-                                        // Ignore, safe to release
-                                    } finally {
-                                        mp.release()
-                                    }
-                                }
-                                mediaPlayer.value = null
-                                vibrator?.cancel()
                             },
                             modifier = Modifier.size(72.dp)
                         ) {
@@ -722,6 +734,12 @@ fun RunSessionScreen(
                     }
                 }
             }
+        }
+    }
+    // Stop alerts when composable leaves composition (navigation away)
+    DisposableEffect(Unit) {
+        onDispose {
+            stopAlerts()
         }
     }
 }
