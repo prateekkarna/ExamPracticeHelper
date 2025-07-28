@@ -23,7 +23,7 @@ fun AppRootNavigation() {
     val navController = rememberNavController()
     AppScaffold(
         navController = navController,
-        drawerItems = listOf("Home", "Activity", "Settings", "About")
+        drawerItems = listOf("Home", "Sessions" ,"Activity", "Settings", "About")
     ) {
         NavHost(navController, startDestination = "home") {
             composable("home") {

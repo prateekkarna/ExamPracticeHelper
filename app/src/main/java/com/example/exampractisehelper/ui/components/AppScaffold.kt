@@ -20,6 +20,7 @@ import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.TrackChanges
 import androidx.compose.material.icons.filled.Timer
+import androidx.compose.material.icons.filled.ListAlt
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -94,14 +95,20 @@ fun AppScaffold(
                         "settings" -> Icons.Default.Settings
                         "about" -> Icons.Default.Info
                         "activity" -> Icons.Default.Timer
+                        "sessions" -> Icons.Default.ListAlt
                         else -> null
                     }
-                    val isSelected = navController.currentBackStackEntry?.destination?.route == route
+                    val isSelected = navController.currentBackStackEntry?.destination?.route == route ||
+                        (route == "sessions" && navController.currentBackStackEntry?.destination?.route == "home")
                     NavigationDrawerItem(
                         label = { Text(label, fontWeight = FontWeight.Medium) },
                         selected = isSelected,
                         onClick = {
-                            navController.navigate(route)
+                            if (route == "sessions") {
+                                navController.navigate("home")
+                            } else {
+                                navController.navigate(route)
+                            }
                             scope.launch { drawerState.close() }
                         },
                         icon = icon?.let {
