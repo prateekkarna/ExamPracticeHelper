@@ -6,11 +6,11 @@ plugins {
 }
 
 android {
-    namespace = "com.example.exampractisehelper"
+    namespace = "com.abhyasa.exampractisehelper"
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "com.example.exampractisehelper"
+        applicationId = "com.abhyasa.exampractisehelper"
         minSdk = 24
         targetSdk = 36
         versionCode = 1
