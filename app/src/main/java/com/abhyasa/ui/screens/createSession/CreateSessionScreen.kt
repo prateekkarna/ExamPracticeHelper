@@ -105,7 +105,7 @@ fun CreateSessionScreen(
                         OutlinedTextField(
                             value = sessionName,
                             onValueChange = { sessionName = it },
-                            label = { Text("Session Name* (eg. UPSC Mains)") },
+                            label = { Text("Session Name* (eg. HLT/FLT)") },
                             isError = sessionName.isEmpty(),
                             singleLine = true,
                             modifier = Modifier.fillMaxWidth()

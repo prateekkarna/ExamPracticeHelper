@@ -21,12 +21,12 @@ fun AboutScreen() {
                 modifier = Modifier.padding(24.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Text("Abhyasa", style = MaterialTheme.typography.headlineMedium)
+                Text("Prayatna", style = MaterialTheme.typography.headlineMedium)
                 Spacer(Modifier.height(8.dp))
                 Text("Version $versionName", style = MaterialTheme.typography.bodyMedium)
                 Spacer(Modifier.height(16.dp))
                 Text(
-                    "Abhyasa helps you create, organize, and manage sessions, tasks, and routines for any purpose—study, work, fitness, or personal growth. Track your progress, stay productive, and achieve your goals with flexible session and task management tools.",
+                    "Prayatna helps you create, organize, and manage sessions, tasks, and routines for any purpose—study, work, fitness, or personal growth. Track your progress, stay productive, and achieve your goals with flexible session and task management tools.",
                     style = MaterialTheme.typography.bodyLarge
                 )
                 Spacer(Modifier.height(24.dp))

@@ -1,0 +1,125 @@
+[
+  {
+    "sessionName": "FLT",
+    "isTimed": true,
+    "totalDuration": 10800,
+    "tasks": [
+      {
+        "taskName": "10 Marker Question",
+        "hasSubtasks": true,
+        "taskDuration": 420,
+        "typeLabel": "Prep",
+        "subtasks": [
+          { "subtaskName": "Read & Frame", "duration": 20 },
+          { "subtaskName": "Introduction", "duration": 50 },
+          { "subtaskName": "Body Page 1", "duration": 150 },
+          { "subtaskName": "Body Page 2", "duration": 150 },
+          { "subtaskName": "Conclusion", "duration": 50 },
+          { "subtaskName": "Buffer", "duration": 10 }
+        ]
+      },
+      {
+        "taskName": "15 Marker Question",
+        "hasSubtasks": true,
+        "taskDuration": 660,
+        "typeLabel": "Prep",
+        "subtasks": [
+          { "subtaskName": "Read & Frame", "duration": 40 },
+          { "subtaskName": "Introduction", "duration": 50 },
+          { "subtaskName": "Body Page 1", "duration": 150 },
+          { "subtaskName": "Body Page 2", "duration": 190 },
+          { "subtaskName": "Body Page 3", "duration": 150 },
+          { "subtaskName": "Conclusion", "duration": 50 },
+          { "subtaskName": "Buffer", "duration": 10 }
+        ]
+      },
+      {
+        "taskName": "20 Marker Question",
+        "hasSubtasks": true,
+        "taskDuration": 840,
+        "typeLabel": "Prep",
+        "subtasks": [
+          { "subtaskName": "Read & Frame", "duration": 40 },
+          { "subtaskName": "Introduction", "duration": 55 },
+          { "subtaskName": "Body Page 1", "duration": 150 },
+          { "subtaskName": "Body Page 2", "duration": 190 },
+          { "subtaskName": "Body Page 3", "duration": 190 },
+          { "subtaskName": "Body Page 4", "duration": 150 },
+          { "subtaskName": "Conclusion", "duration": 55 },
+          { "subtaskName": "Buffer", "duration": 10 }
+        ]
+      }
+    ]
+  },
+  {
+    "sessionName": "HLT",
+    "isTimed": true,
+    "totalDuration": 5400,
+    "tasks": [
+      {
+        "taskName": "10 Marker Question",
+        "hasSubtasks": true,
+        "taskDuration": 420,
+        "typeLabel": "Prep",
+        "subtasks": [
+          { "subtaskName": "Read & Frame", "duration": 20 },
+          { "subtaskName": "Introduction", "duration": 50 },
+          { "subtaskName": "Body Page 1", "duration": 150 },
+          { "subtaskName": "Body Page 2", "duration": 150 },
+          { "subtaskName": "Conclusion", "duration": 50 },
+          { "subtaskName": "Buffer", "duration": 10 }
+        ]
+      },
+      {
+        "taskName": "15 Marker Question",
+        "hasSubtasks": true,
+        "taskDuration": 660,
+        "typeLabel": "Prep",
+        "subtasks": [
+          { "subtaskName": "Read & Frame", "duration": 40 },
+          { "subtaskName": "Introduction", "duration": 50 },
+          { "subtaskName": "Body Page 1", "duration": 150 },
+          { "subtaskName": "Body Page 2", "duration": 190 },
+          { "subtaskName": "Body Page 3", "duration": 150 },
+          { "subtaskName": "Conclusion", "duration": 50 },
+          { "subtaskName": "Buffer", "duration": 10 }
+        ]
+      },
+      {
+        "taskName": "20 Marker Question",
+        "hasSubtasks": true,
+        "taskDuration": 840,
+        "typeLabel": "Prep",
+        "subtasks": [
+          { "subtaskName": "Read & Frame", "duration": 40 },
+          { "subtaskName": "Introduction", "duration": 55 },
+          { "subtaskName": "Body Page 1", "duration": 150 },
+          { "subtaskName": "Body Page 2", "duration": 190 },
+          { "subtaskName": "Body Page 3", "duration": 190 },
+          { "subtaskName": "Body Page 4", "duration": 150 },
+          { "subtaskName": "Conclusion", "duration": 55 },
+          { "subtaskName": "Buffer", "duration": 10 }
+        ]
+      }
+    ]
+  },
+  {
+    "sessionName": "Essay",
+    "isTimed": true,
+    "totalDuration": 5400,
+    "tasks": [
+      {
+        "taskName": "Brainstorm",
+        "hasSubtasks": false,
+        "taskDuration": 1200,
+        "typeLabel": "Prep"
+      },
+      {
+        "taskName": "Body Per Page",
+        "hasSubtasks": true,
+        "taskDuration": 360,
+        "typeLabel": "Prep"
+      }
+    ]
+  }
+]

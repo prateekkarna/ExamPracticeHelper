@@ -63,10 +63,16 @@ fun RunSessionScreen(
     val taskDao = remember { db.taskDao() }
     val subTaskDao = remember { db.subTaskDao() }
     val settingsDao = remember { db.settingsDao() }
-    var alertType by remember { mutableStateOf("audio") }
+    var alertType by remember { mutableStateOf("both") }
     LaunchedEffect(Unit) {
-        val settings = withContext(Dispatchers.IO) { settingsDao.getSettings() }
-        alertType = settings?.alertType ?: "audio"
+        // Ensure default settings exist
+        val settings = settingsDao.getSettings()
+        if (settings == null) {
+            settingsDao.insertSettings(com.abhyasa.data.entities.Settings(alertType = "both"))
+            alertType = "both"
+        } else {
+            alertType = settings.alertType
+        }
     }
     fun shouldVibrate(): Boolean = alertType == "vibration" || alertType == "both"
     fun shouldPlayAudio(): Boolean = alertType == "audio" || alertType == "both"
