@@ -67,7 +67,7 @@ fun AddTaskComponent(
             OutlinedTextField(
                 value = taskName,
                 onValueChange = onTaskNameChange,
-                label = { Text("Task Name* (eg, Essay)") },
+                label = { Text("Task Name* (eg, 10 Marker)") },
                 singleLine = true,
                 modifier = Modifier.weight(1f)
             )

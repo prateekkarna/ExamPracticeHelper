@@ -79,7 +79,7 @@ fun AppScaffold(
                         )
                         Spacer(Modifier.width(12.dp))
                         Text(
-                            "Abhyasa",
+                            "Prayatna",
                             color = Color.White,
                             fontWeight = FontWeight.Bold,
                             fontSize = 22.sp
@@ -149,7 +149,7 @@ fun AppScaffold(
                                 modifier = Modifier.size(28.dp)
                             )
                             Spacer(Modifier.width(8.dp))
-                            Text("Abhyasa")
+                            Text("Prayatna")
                         }
                     },
                     navigationIcon = {

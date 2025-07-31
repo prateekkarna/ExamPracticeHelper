@@ -25,6 +25,10 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.ui.Alignment
 
 @Composable
 fun HomeScreen(
@@ -32,15 +36,7 @@ fun HomeScreen(
     onCreateExamClick: () -> Unit
 ) {
     val context = LocalContext.current
-    val db = Room.databaseBuilder(
-        context,
-        PracticeDatabase::class.java,
-        "exam_practise_helper_db_v2"
-    )
-    .addMigrations(MIGRATION_2_3)
-    .fallbackToDestructiveMigration()
-    .fallbackToDestructiveMigrationOnDowngrade()
-    .build()
+    val db = PracticeDatabase.getInstance(context)
     val repository = ExamRepository(db.examDao(), db.examTypeDao())
     val sessionRepository = PracticeSessionRepositoryImpl(db.practiceSessionDao())
     val viewModel: HomeViewModel = viewModel(factory = object : androidx.lifecycle.ViewModelProvider.Factory {
@@ -51,10 +47,10 @@ fun HomeScreen(
     })
     val exams by viewModel.exams.collectAsState()
     val sessions by viewModel.sessions.collectAsState()
+    val isLoading by viewModel.isLoading.collectAsState()
 
     LaunchedEffect(Unit) {
         viewModel.loadExams()
-        viewModel.loadSessions()
     }
 
     var searchQuery by rememberSaveable { mutableStateOf("") }
@@ -86,33 +82,30 @@ fun HomeScreen(
                 modifier = Modifier.fillMaxWidth()
             )
             Spacer(Modifier.height(16.dp))
-            LazyVerticalGrid(
-                columns = GridCells.Fixed(2),
-                modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(vertical = 8.dp)
-            ) {
-                items(sessions.filter { it.name.contains(searchQuery, ignoreCase = true) }) { session ->
-                    PracticeSessionCard(
-                        session = session,
-                        modifier = Modifier
-                            .padding(8.dp)
-                            .clickable {
-                                navController.navigate("session_detail/${session.sessionId}")
-                            }
-                    )
+            if (isLoading) {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator()
                 }
-                items(exams.filter { it.name.contains(searchQuery, ignoreCase = true) }) { exam ->
-                    ExamCard(
-                        exam = exam,
-                        modifier = Modifier
-                            .padding(8.dp)
-                            .clickable {
-                                navController.navigate("exam_detail/${exam.examId}")
-                            }
-                    )
+            } else {
+                LazyVerticalGrid(
+                    columns = GridCells.Fixed(2),
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(vertical = 8.dp)
+                ) {
+                    items(sessions.filter { it.name.contains(searchQuery, ignoreCase = true) && it.sessionId > 0 }) { session ->
+                        PracticeSessionCard(
+                            session = session,
+                            modifier = Modifier
+                                .padding(8.dp)
+                                .clickable {
+                                    if (session.sessionId > 0) {
+                                        navController.navigate("session_detail/${session.sessionId}")
+                                    }
+                                }
+                        )
+                    }
                 }
             }
-            //Text("Hello")
         }
     }
 }

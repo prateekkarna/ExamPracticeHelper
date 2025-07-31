@@ -51,7 +51,7 @@ fun TimerScreen() {
     var alertType by remember { mutableStateOf("audio") }
     LaunchedEffect(Unit) {
         val settings = withContext(Dispatchers.IO) { settingsDao.getSettings() }
-        alertType = settings?.alertType ?: "audio"
+        alertType = settings?.alertType ?: "both"
     }
     fun shouldVibrate() = alertType == "vibration" || alertType == "both"
     fun shouldPlayAudio() = alertType == "audio" || alertType == "both"
