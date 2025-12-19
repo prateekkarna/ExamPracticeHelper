@@ -4,6 +4,7 @@ import android.content.Context
 import android.media.MediaPlayer
 import android.os.VibrationEffect
 import android.os.Vibrator
+import android.os.PowerManager
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.*
@@ -137,6 +138,17 @@ fun TimerScreen() {
                     stopAlerts() // Stop alerts when timer hits zero
                 }
             }
+        }
+    }
+
+    val powerManager = remember { context.getSystemService(Context.POWER_SERVICE) as PowerManager }
+    val wakeLock = remember { powerManager.newWakeLock(PowerManager.SCREEN_DIM_WAKE_LOCK, "TimerScreen::WakeLock") }
+
+    LaunchedEffect(running) {
+        if (running) {
+            if (!wakeLock.isHeld) wakeLock.acquire(10 * 60 * 1000L) // 10 minutes timeout
+        } else {
+            if (wakeLock.isHeld) wakeLock.release()
         }
     }
 
@@ -283,6 +295,7 @@ fun TimerScreen() {
     DisposableEffect(Unit) {
         onDispose {
             stopAlerts()
+            if (wakeLock.isHeld) wakeLock.release()
         }
     }
 }
